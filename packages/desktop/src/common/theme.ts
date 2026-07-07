@@ -32,6 +32,17 @@ export const isDarkThemeId = (theme: unknown): theme is string => {
   )
 }
 
+export const normalizeAppTheme = (
+  theme: unknown,
+  fallback = 'light'
+): string => {
+  if (typeof theme === 'string' && theme.trim()) {
+    return theme
+  }
+
+  return fallback
+}
+
 // Each built-in theme's editor background colour, kept in sync with the
 // `--editorBgColor` of the matching renderer theme (renderer/src/assets/themes/
 // *.theme.css; the default light theme lives in styles/index.css and is handled

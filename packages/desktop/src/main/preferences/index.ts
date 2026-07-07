@@ -6,7 +6,8 @@ import log from 'electron-log'
 import { isWindows } from '../config'
 import { hasSameKeys } from '../utils'
 import { onInternalChannel } from '../utils/internalIpc'
-import { getSupportedLanguages, isLanguageSupported } from 'common/i18n'
+import { DEFAULT_LANGUAGE, getSupportedLanguages, isLanguageSupported } from 'common/i18n'
+import { normalizeAppTheme } from 'common/theme'
 import { TypedEmitter } from '@shared/types/typedEmitter'
 import type { IUserPreferences } from '@shared/types/preferences'
 import schema from './schema.json'
@@ -73,10 +74,7 @@ class Preference extends TypedEmitter<PreferenceEvents> {
 
       // Set system language on first application start
       if (!this.hasPreferencesFile) {
-        const systemLanguage = this._getSystemLanguage()
-        if (systemLanguage) {
-          defaultSettings!.language = systemLanguage
-        }
+        defaultSettings!.language = DEFAULT_LANGUAGE
       }
     } catch (err) {
       log.error(err)
@@ -93,6 +91,28 @@ class Preference extends TypedEmitter<PreferenceEvents> {
       // Because `this.getAll()` will return a plainObject, so we can not use `hasOwnProperty` method
       // const plainObject = () => Object.create(null)
       const userSetting = this.getAll() as Record<string, unknown>
+      let normalizedExistingValues = false
+      const normalizedLanguage = this._normalizeLanguage(userSetting.language)
+      const normalizedTheme = normalizeAppTheme(userSetting.theme)
+      const normalizedLightTheme = normalizeAppTheme(userSetting.lightModeTheme, 'light')
+      const normalizedDarkTheme = normalizeAppTheme(userSetting.darkModeTheme, 'dark')
+
+      if (userSetting.language !== normalizedLanguage) {
+        userSetting.language = normalizedLanguage
+        normalizedExistingValues = true
+      }
+      if (userSetting.theme !== normalizedTheme) {
+        userSetting.theme = normalizedTheme
+        normalizedExistingValues = true
+      }
+      if (userSetting.lightModeTheme !== normalizedLightTheme) {
+        userSetting.lightModeTheme = normalizedLightTheme
+        normalizedExistingValues = true
+      }
+      if (userSetting.darkModeTheme !== normalizedDarkTheme) {
+        userSetting.darkModeTheme = normalizedDarkTheme
+        normalizedExistingValues = true
+      }
       // Update outdated settings
       const requiresUpdate = !hasSameKeys(defaultSettings, userSetting)
       const userSettingKeys = Object.keys(userSetting)
@@ -119,9 +139,11 @@ class Preference extends TypedEmitter<PreferenceEvents> {
             userSetting[key] = defaultSettings[key]
           }
         }
-        if (addedNewEntries) {
+        if (addedNewEntries || normalizedExistingValues) {
           this.store.set(userSetting)
         }
+      } else if (normalizedExistingValues) {
+        this.store.set(userSetting)
       }
     }
 
@@ -133,6 +155,16 @@ class Preference extends TypedEmitter<PreferenceEvents> {
   }
 
   setItem(key: string, value: unknown): void {
+    if (key === 'language') {
+      value = this._normalizeLanguage(value)
+    } else if (key === 'theme') {
+      value = normalizeAppTheme(value)
+    } else if (key === 'lightModeTheme') {
+      value = normalizeAppTheme(value, 'light')
+    } else if (key === 'darkModeTheme') {
+      value = normalizeAppTheme(value, 'dark')
+    }
+
     this.store.set(key, value)
     ipcMain.emit('broadcast-preferences-changed', { [key]: value })
   }
@@ -221,11 +253,17 @@ class Preference extends TypedEmitter<PreferenceEvents> {
       }
 
       log.info(`System language ${systemLocale} not supported, will use default language`)
-      return null
+      return DEFAULT_LANGUAGE
     } catch (error) {
       log.error('Error detecting system language:', error)
-      return null
+      return DEFAULT_LANGUAGE
     }
+  }
+
+  _normalizeLanguage(language: unknown): string {
+    return typeof language === 'string' && isLanguageSupported(language)
+      ? language
+      : DEFAULT_LANGUAGE
   }
 }
 

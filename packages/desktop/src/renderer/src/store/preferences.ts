@@ -1,4 +1,5 @@
 import { defineStore } from 'pinia'
+import { DEFAULT_LANGUAGE } from '@shared/i18n'
 import bus from '../bus'
 import { setLanguage } from '../i18n'
 
@@ -154,7 +155,7 @@ export const usePreferencesStore = defineStore('preferences', {
     defaultDirectoryToOpen: '',
     lastOpenedFolder: '',
     treePathExcludePatterns: [],
-    language: 'en',
+    language: DEFAULT_LANGUAGE,
 
     editorFontFamily: 'Open Sans',
     fontSize: 16,

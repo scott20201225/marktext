@@ -103,6 +103,7 @@ import {
   de,
   es,
   fr,
+  it,
   ja,
   ko,
   pt,
@@ -124,6 +125,7 @@ import { isOsx, animatedScrollTo } from '@/util'
 import { moveImageToFolder, uploadImage } from '@/util/fileSystem'
 import { guessClipboardFilePath } from '@/util/clipboard'
 import { getCssForOptions, getHtmlToc, type PdfCssOptions, type HtmlTocOptions } from '@/util/pdf'
+import { patchMuyaSoftBreakIme } from '@/util/softBreakIme'
 import { resolveTocHeadingElement } from '@/util/tocNavigation'
 import { addCommonStyle, setEditorWidth } from '@/util/theme'
 import { usePreferencesStore } from '@/store/preferences'
@@ -151,6 +153,7 @@ const MUYA_LOCALES: Record<string, ILocale> = {
   de,
   es,
   fr,
+  it,
   ja,
   ko,
   pt,
@@ -1790,6 +1793,7 @@ onMounted(() => {
   // The new engine requires an explicit init() after construction (it builds
   // the document tree and instantiates the registered UI plugins).
   muya.init()
+  patchMuyaSoftBreakIme(muya)
   editor.value = muya
   // The first document's content is set via constructor options, so no
   // `file-loaded` / `setMarkdownToEditor` runs for it — seed its TOC here.

@@ -28,6 +28,7 @@ declare module '@muyajs/core' {
   export const de: ILocale
   export const es: ILocale
   export const fr: ILocale
+  export const it: ILocale
   export const ja: ILocale
   export const ko: ILocale
   export const pt: ILocale
@@ -47,7 +48,14 @@ declare module '@muyajs/core' {
   export class Muya {
     static use(plugin: any, options?: Record<string, unknown>): void
     constructor(element: HTMLElement, options?: Record<string, unknown>)
+    editor: {
+      scrollPage?: {
+        firstContentInDescendant?: () => unknown | null
+      }
+      [key: string]: any
+    }
     init(): void
+    getMarkdown(): string
     [key: string]: any
   }
 

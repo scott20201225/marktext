@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { de, en, es, fr, ja, ko, pt, zhCN, zhTW } from '../locales';
+import { de, en, es, fr, it as itLocale, ja, ko, pt, zhCN, zhTW } from '../locales';
 
 // CHARACTERIZATION: every shipped locale must carry the exact same translation
 // keys as the canonical `en` locale (no missing/extra keys), and expose a
@@ -10,6 +10,7 @@ const nonEnLocales: Array<[string, typeof en]> = [
     ['de', de],
     ['es', es],
     ['fr', fr],
+    ['it', itLocale],
     ['ja', ja],
     ['ko', ko],
     ['pt', pt],
@@ -25,8 +26,8 @@ describe('locale completeness', () => {
         expect(enKeys.length).toBeGreaterThan(0);
     });
 
-    it('ships exactly nine built-in locales (en + 8 translations)', () => {
-        expect(nonEnLocales).toHaveLength(8);
+    it('ships exactly ten built-in locales (en + 9 translations)', () => {
+        expect(nonEnLocales).toHaveLength(9);
     });
 
     describe('key parity with en', () => {
@@ -42,6 +43,7 @@ describe('locale completeness', () => {
             'de': 'de',
             'es': 'es',
             'fr': 'fr',
+            'it': 'it',
             'ja': 'ja',
             'ko': 'ko',
             'pt': 'pt',

@@ -49,13 +49,11 @@ const DARK_THEMES: ReadonlyArray<readonly [string, string]> = [
 export default function(userPreference: Preference): MenuItemConstructorOptions {
   const preferences = userPreference.getAll() as { theme?: string; followSystemTheme?: boolean }
   const { theme, followSystemTheme } = preferences
-  const isThemeSelectionEnabled = !followSystemTheme
 
   const themeRadio = ([labelKey, id]: readonly [string, string]): MenuItemConstructorOptions => ({
     label: t(`menu.theme.${labelKey}`),
     type: 'radio',
     id,
-    enabled: isThemeSelectionEnabled,
     checked: theme === id,
     click() {
       actions.selectTheme(id)
@@ -74,13 +72,6 @@ export default function(userPreference: Preference): MenuItemConstructorOptions 
       }
     }
   ]
-
-  if (!isThemeSelectionEnabled) {
-    submenu.push({
-      label: t('menu.theme.followThemDisabled'),
-      enabled: false
-    })
-  }
 
   // Group themes into nested submenus so the top-level Theme menu stays short
   // instead of expanding to the full window height with 30+ flat items (#4534).

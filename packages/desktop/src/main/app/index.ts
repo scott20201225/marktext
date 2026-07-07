@@ -6,6 +6,8 @@ import log from 'electron-log'
 import { app, BrowserWindow, clipboard, dialog, nativeTheme, shell, ipcMain } from 'electron'
 import type { BrowserWindowConstructorOptions } from 'electron'
 import { isChildOfDirectory } from 'common/filesystem/paths'
+import { DEFAULT_LANGUAGE, isLanguageSupported } from 'common/i18n'
+import { normalizeAppTheme } from 'common/theme'
 import type { IUserPreferences } from '@shared/types/preferences'
 import { isLinux, isOsx, isWindows } from '../config'
 import parseArgs from '../cli/parser'
@@ -150,68 +152,17 @@ class App {
     try {
       let currentLanguage = this._accessor.preferences.getItem<string>('language')
 
-      // If no language is set, auto-detect based on the system language
-      if (!currentLanguage) {
-        const systemLanguage = app.getLocale()
-        log.info(`System language detected: ${systemLanguage}`)
-
-        // Supported language list (based on languages actually supported by the project)
-        const supportedLanguages = [
-          'en',
-          'zh-CN',
-          'zh-TW',
-          'ja',
-          'ko',
-          'fr',
-          'de',
-          'es',
-          'pt',
-          'ru'
-        ]
-
-        // Language mapping: system language code -> application language code
-        const languageMap: Record<string, string> = {
-          'zh-CN': 'zh-CN',
-          'zh-TW': 'zh-TW',
-          'zh-HK': 'zh-TW',
-          zh: 'zh-CN',
-          en: 'en',
-          'en-US': 'en',
-          'en-GB': 'en',
-          ja: 'ja',
-          'ja-JP': 'ja',
-          ko: 'ko',
-          'ko-KR': 'ko',
-          fr: 'fr',
-          'fr-FR': 'fr',
-          de: 'de',
-          'de-DE': 'de',
-          es: 'es',
-          'es-ES': 'es',
-          pt: 'pt',
-          'pt-BR': 'pt',
-          ru: 'ru',
-          'ru-RU': 'ru'
-        }
-
-        currentLanguage = languageMap[systemLanguage] || 'en'
-
-        // If the detected language is not in the supported list, use English
-        if (!supportedLanguages.includes(currentLanguage)) {
-          currentLanguage = 'en'
-        }
-
-        // Save the detected language setting
+      if (!currentLanguage || !isLanguageSupported(currentLanguage)) {
+        currentLanguage = DEFAULT_LANGUAGE
         this._accessor.preferences.setItem('language', currentLanguage)
-        log.info(`Auto-detected and set language to: ${currentLanguage}`)
+        log.info(`Language defaulted to: ${currentLanguage}`)
       }
 
       setLanguage(currentLanguage)
       log.info(`Main process language initialized to: ${currentLanguage}`)
     } catch (error) {
       log.error('Failed to initialize main process language:', error)
-      // If an error occurs, use English as the default language
-      setLanguage('en')
+      setLanguage(DEFAULT_LANGUAGE)
     }
   }
 
@@ -228,11 +179,15 @@ class App {
     const { preferences, editorBufferStore } = this._accessor
 
     // Initialize language settings
-    const { startUpAction, defaultDirectoryToOpen, theme, language } = preferences.getAll()
+    const rawPreferences = preferences.getAll()
+    const startUpAction = rawPreferences.startUpAction
+    const defaultDirectoryToOpen = rawPreferences.defaultDirectoryToOpen
+    const theme = normalizeAppTheme(rawPreferences.theme)
+    const language = rawPreferences.language
     const followSystemTheme = preferences.getItem<boolean>('followSystemTheme')
     const lastOpenedFolder = preferences.getItem<string>('lastOpenedFolder')
-    const lightModeTheme = preferences.getItem<string>('lightModeTheme')
-    const darkModeTheme = preferences.getItem<string>('darkModeTheme')
+    const lightModeTheme = normalizeAppTheme(preferences.getItem<string>('lightModeTheme'), 'light')
+    const darkModeTheme = normalizeAppTheme(preferences.getItem<string>('darkModeTheme'), 'dark')
 
     if (language) {
       setLanguage(language)
@@ -297,8 +252,14 @@ class App {
       // When followSystemTheme is enabled, immediately switch to match system
         if (change.followSystemTheme === true) {
           const systemIsDark = nativeTheme.shouldUseDarkColors
-          const lightModeTheme = preferences.getItem<string>('lightModeTheme')
-          const darkModeTheme = preferences.getItem<string>('darkModeTheme')
+          const lightModeTheme = normalizeAppTheme(
+            preferences.getItem<string>('lightModeTheme'),
+            'light'
+          )
+          const darkModeTheme = normalizeAppTheme(
+            preferences.getItem<string>('darkModeTheme'),
+            'dark'
+          )
           const newTheme = systemIsDark ? darkModeTheme : lightModeTheme
 
           log.info(
@@ -315,15 +276,21 @@ class App {
           const systemIsDark = nativeTheme.shouldUseDarkColors
 
         // Get current values, but prefer the NEW values from the change event
-          let lightModeTheme = preferences.getItem<string>('lightModeTheme')
-          let darkModeTheme = preferences.getItem<string>('darkModeTheme')
+          let lightModeTheme = normalizeAppTheme(
+            preferences.getItem<string>('lightModeTheme'),
+            'light'
+          )
+          let darkModeTheme = normalizeAppTheme(
+            preferences.getItem<string>('darkModeTheme'),
+            'dark'
+          )
 
         // If these preferences were just changed, use the new values from the change object
           if (change.lightModeTheme !== undefined) {
-            lightModeTheme = change.lightModeTheme
+            lightModeTheme = normalizeAppTheme(change.lightModeTheme, 'light')
           }
           if (change.darkModeTheme !== undefined) {
-            darkModeTheme = change.darkModeTheme
+            darkModeTheme = normalizeAppTheme(change.darkModeTheme, 'dark')
           }
 
           const newTheme = systemIsDark ? darkModeTheme : lightModeTheme
@@ -338,8 +305,14 @@ class App {
     if (!this._themeListenerRegistered) {
       nativeTheme.on('updated', () => {
         const followSystemTheme = preferences.getItem<boolean>('followSystemTheme')
-        const lightModeTheme = preferences.getItem<string>('lightModeTheme')
-        const darkModeTheme = preferences.getItem<string>('darkModeTheme')
+        const lightModeTheme = normalizeAppTheme(
+          preferences.getItem<string>('lightModeTheme'),
+          'light'
+        )
+        const darkModeTheme = normalizeAppTheme(
+          preferences.getItem<string>('darkModeTheme'),
+          'dark'
+        )
 
         if (followSystemTheme) {
           const systemIsDark = nativeTheme.shouldUseDarkColors
@@ -662,7 +635,7 @@ class App {
     // Handle language setting requests
     ipcMain.on('mt::get-current-language', (event) => {
       const { language } = this._accessor.preferences.getAll()
-      event.reply('mt::current-language', language || 'en')
+      event.reply('mt::current-language', language || DEFAULT_LANGUAGE)
     })
 
     ipcMain.on('app-create-editor-window', () => {

@@ -9,11 +9,10 @@
         :class="[
           themeItem.name,
           {
-            active: themeItem.name === theme,
-            disabled: followSystemTheme
+            active: themeItem.name === theme
           }
         ]"
-        @click="!followSystemTheme && onSelectChange('theme', themeItem.name)"
+        @click="onSelectTheme(themeItem.name)"
       >
         <!-- eslint-disable-next-line vue/no-v-html -->
         <div v-html="themeItem.html" />
@@ -137,6 +136,17 @@ onMounted(async () => {
 
 const onSelectChange = (type: keyof PreferencesState, value: unknown): void => {
   preferenceStore.SET_SINGLE_PREFERENCE({ type, value })
+}
+
+const onSelectTheme = (nextTheme: string): void => {
+  preferenceStore.SET_USER_PREFERENCE({
+    followSystemTheme: false,
+    theme: nextTheme
+  })
+  window.electron.ipcRenderer.send('mt::set-user-preference', {
+    followSystemTheme: false,
+    theme: nextTheme
+  })
 }
 </script>
 

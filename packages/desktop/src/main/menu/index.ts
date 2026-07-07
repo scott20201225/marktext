@@ -2,6 +2,7 @@ import fs from 'fs'
 import path from 'path'
 import { app, Menu, ipcMain, type BrowserWindow } from 'electron'
 import log from 'electron-log'
+import { DEFAULT_LANGUAGE } from 'common/i18n'
 import { ensureDirSync, isDirectory2, isFile2 } from 'common/filesystem'
 import { isLinux, isOsx, isWindows } from '../config'
 import { updateSidebarMenu } from '../menu/actions/edit'
@@ -390,10 +391,6 @@ class AppMenu {
       }
 
       themeMenus.submenu.items.forEach((item) => {
-        if (item.type === 'radio' && typeof followSystemTheme !== 'undefined') {
-          item.enabled = !followSystemTheme
-        }
-
         if (item.id === 'follow-system-theme' && typeof followSystemTheme !== 'undefined') {
           item.checked = followSystemTheme
         }
@@ -460,10 +457,8 @@ class AppMenu {
   async _initializeLanguage(): Promise<void> {
     try {
       const currentLanguage = this._preferences.getItem<string>('language')
-      if (currentLanguage) {
-        setLanguage(currentLanguage)
-        log.info(`Main process language initialized to: ${currentLanguage}`)
-      }
+      setLanguage(currentLanguage || DEFAULT_LANGUAGE)
+      log.info(`Main process language initialized to: ${currentLanguage || DEFAULT_LANGUAGE}`)
     } catch (error) {
       log.error('Failed to initialize main process language:', error)
     }

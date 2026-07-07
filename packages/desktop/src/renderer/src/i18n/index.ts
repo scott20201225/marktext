@@ -1,8 +1,10 @@
 import { createI18n } from 'vue-i18n'
 import { compile, type MessageCompiler } from '@intlify/core-base'
 import bus from '../bus'
+import { DEFAULT_LANGUAGE } from '@shared/i18n'
 // Directly import translation files
 import enTranslations from '../../../../static/locales/en.json'
+import zhCnTranslations from '../../../../static/locales/zh-CN.json'
 
 // vue-i18n compiles each translation lazily on first use, and its compiler
 // throws a SyntaxError on any value it can't parse — e.g. a literal `{{x}}`
@@ -28,9 +30,12 @@ const safeMessageCompiler: MessageCompiler = (message, context) => {
 // at the call site rather than spreading `any` further.
 const i18n = createI18n({
   legacy: false,
-  locale: 'en', // default is en
+  locale: DEFAULT_LANGUAGE,
   fallbackLocale: 'en',
-  messages: { en: enTranslations }, // Load en by default only
+  messages: {
+    en: enTranslations,
+    [DEFAULT_LANGUAGE]: zhCnTranslations
+  },
   // Disable linking to avoid '@' symbols being misinterpreted
   modifiers: {
     '@': () => '@'

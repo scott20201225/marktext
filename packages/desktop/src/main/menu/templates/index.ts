@@ -8,6 +8,7 @@ import view from './view'
 import window from './window'
 import paragraph from './paragraph'
 import format from './format'
+import language from './language'
 import theme from './theme'
 import type Keybindings from '../../keyboard/shortcutHandler'
 import type Preference from '../../preferences'
@@ -47,6 +48,7 @@ export default function(
     format(keybindings),
     window(keybindings),
     theme(preferences),
+    language(preferences),
     view(keybindings),
     help()
   ]

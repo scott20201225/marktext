@@ -1,9 +1,8 @@
 import fs from 'fs'
 import path from 'path'
+import { APP_LANGUAGE_OPTIONS, DEFAULT_LANGUAGE, SUPPORTED_LANGUAGES } from '@shared/i18n'
 
 export type Translations = Record<string, unknown>
-
-const SUPPORTED_LANGUAGES = ['en', 'zh-CN', 'zh-TW', 'es', 'fr', 'de', 'ja', 'ko', 'pt', 'tr'] as const
 
 export type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
@@ -57,7 +56,7 @@ function loadTranslations(language: string): Translations | null {
  */
 function getTranslation(
   key: string,
-  language: string = 'en',
+  language: string = DEFAULT_LANGUAGE,
   params: Record<string, string | number> = {}
 ): string {
   const translations = loadTranslations(language)
@@ -106,10 +105,13 @@ function getAllTranslations(language: string): Translations | null {
 }
 
 export {
+  APP_LANGUAGE_OPTIONS,
+  DEFAULT_LANGUAGE,
   getTranslation,
   getSupportedLanguages,
   isLanguageSupported,
   clearCache,
   getAllTranslations,
-  loadTranslations
+  loadTranslations,
+  SUPPORTED_LANGUAGES
 }
