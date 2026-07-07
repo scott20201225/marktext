@@ -1,5 +1,6 @@
 import {
     admonitionTitle,
+    createAdmonitionIcon,
     parseAdmonitionMarker,
 } from './admonition';
 
@@ -17,7 +18,14 @@ function transformBlockquote(blockquote: HTMLQuoteElement) {
 
     const title = document.createElement('div');
     title.className = 'admonition-title';
-    title.textContent = admonitionTitle(parsed.admonitionType);
+
+    title.appendChild(createAdmonitionIcon(document, parsed.admonitionType, 'admonition-icon'));
+
+    const titleText = document.createElement('span');
+    titleText.className = 'admonition-title-text';
+    titleText.textContent = admonitionTitle(parsed.admonitionType);
+    title.appendChild(titleText);
+
     blockquote.insertBefore(title, firstChild);
     firstChild.remove();
 }

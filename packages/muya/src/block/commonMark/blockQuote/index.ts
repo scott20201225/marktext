@@ -1,6 +1,6 @@
 import type { Muya } from '../../../muya';
 import type { IBlockQuoteState } from '../../../state/types';
-import { admonitionTitle } from '../../../state/admonition';
+import { admonitionTitle, createAdmonitionIcon } from '../../../state/admonition';
 import { mixins } from '../../../utils';
 import Parent from '../../base/parent';
 import IContainerQueryBlock from '../../mixins/containerQueryBlock';
@@ -40,8 +40,15 @@ class BlockQuote extends Parent {
         if (this.meta?.admonitionType) {
             const title = document.createElement('span');
             title.className = 'mu-admonition-title';
-            title.textContent = muya.i18n.t(admonitionTitle(this.meta.admonitionType));
             title.setAttribute('contenteditable', 'false');
+
+            title.appendChild(createAdmonitionIcon(document, this.meta.admonitionType, 'mu-admonition-icon'));
+
+            const titleText = document.createElement('span');
+            titleText.className = 'mu-admonition-title-text';
+            titleText.textContent = muya.i18n.t(admonitionTitle(this.meta.admonitionType));
+            title.appendChild(titleText);
+
             this.domNode!.appendChild(title);
         }
     }

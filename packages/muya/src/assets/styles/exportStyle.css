@@ -107,55 +107,30 @@
     font-weight: 600;
 }
 
-.markdown-body blockquote.admonition .admonition-title::before {
-    display: inline-block;
-    min-width: 1em;
-
-    font-size: 0.95em;
-    font-weight: 700;
-    line-height: 1;
-
-    content: 'ⓘ';
+.markdown-body blockquote.admonition .admonition-title .admonition-icon {
+    flex: none;
+    width: 1em;
+    height: 1em;
 }
 
 .markdown-body blockquote.admonition.admonition-note {
     --admonition-color: #2563eb;
 }
 
-.markdown-body blockquote.admonition.admonition-note .admonition-title::before {
-    content: 'ⓘ';
-}
-
 .markdown-body blockquote.admonition.admonition-tip {
     --admonition-color: #059669;
-}
-
-.markdown-body blockquote.admonition.admonition-tip .admonition-title::before {
-    content: '✦';
 }
 
 .markdown-body blockquote.admonition.admonition-caution {
     --admonition-color: #d97706;
 }
 
-.markdown-body blockquote.admonition.admonition-caution .admonition-title::before {
-    content: '▲';
-}
-
 .markdown-body blockquote.admonition.admonition-warning {
     --admonition-color: #dc2626;
 }
 
-.markdown-body blockquote.admonition.admonition-warning .admonition-title::before {
-    content: '⚠';
-}
-
 .markdown-body blockquote.admonition.admonition-important {
     --admonition-color: #7c3aed;
-}
-
-.markdown-body blockquote.admonition.admonition-important .admonition-title::before {
-    content: '✱';
 }
 
 .markdown-body blockquote.admonition p:last-child {
