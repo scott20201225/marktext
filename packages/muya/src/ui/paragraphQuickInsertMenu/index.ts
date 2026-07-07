@@ -102,11 +102,7 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
                 const label = getLabelFromEvent(event);
                 if (label) {
                     event.preventDefault();
-                    replaceBlockByLabel({
-                        label,
-                        block: anchorBlock.parent!,
-                        muya: this.muya,
-                    });
+                    this._runQuickInsertAction(label, anchorBlock);
                 }
             }
         };
@@ -230,14 +226,28 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
     }
 
     override selectItem({ label }: IQuickInsertMenuItem['children'][number]) {
-        const { _block: block, muya } = this;
-        replaceBlockByLabel({
-            label,
-            block: block!.parent!,
-            muya,
-        });
+        const { _block: block } = this;
+        if (!block)
+            return;
+
+        this._runQuickInsertAction(label, block);
         // delay hide to avoid dispatch enter handler
         setTimeout(this.hide.bind(this));
+    }
+
+    private _runQuickInsertAction(label: string, block: ParagraphContent) {
+        if (label === 'choose-image') {
+            block.text = '';
+            block.setCursor(0, 0, true);
+            block.format('image');
+            return;
+        }
+
+        replaceBlockByLabel({
+            label,
+            block: block.parent!,
+            muya: this.muya,
+        });
     }
 
     getItemElement(item: IQuickInsertMenuItem['children'][number]) {

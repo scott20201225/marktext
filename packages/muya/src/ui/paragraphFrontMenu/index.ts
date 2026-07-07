@@ -10,6 +10,7 @@ import type {
     TState,
 } from '../../state/types';
 import type { IQuickInsertMenuItem } from '../paragraphQuickInsertMenu/config';
+import Format from '../../block/base/format';
 import { replaceBlockByLabel } from '../../block/blockTransforms';
 import { ScrollPage } from '../../block/scrollPage';
 import emptyStates from '../../config/emptyStates';
@@ -261,6 +262,15 @@ export class ParagraphFrontMenu extends BaseFloat {
 
     private _turnIntoBlock(label: string, block: Parent, oldState: TState) {
         const { muya } = this;
+        if (label === 'choose-image') {
+            const cursorBlock = block.firstContentInDescendant();
+            if (cursorBlock instanceof Format) {
+                cursorBlock.setCursor(0, 0, true);
+                cursorBlock.format('image');
+            }
+            return null;
+        }
+
         switch (block.blockName) {
             case 'paragraph':
                 // fall through
