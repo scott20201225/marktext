@@ -138,6 +138,23 @@ describe('muya.updateParagraph()', () => {
         });
     });
 
+    it('turns a paragraph into an admonition and keeps the caret in its first paragraph', async () => {
+        const muya = bootMuya('warning body\nnext line\n');
+        const first = placeCursorOnFirstBlock(muya);
+        first.setCursor(7, 7, true);
+
+        muya.updateParagraph('admonition warning');
+
+        await vi.waitFor(() => {
+            expect(firstBlock(muya).name).toBe('block-quote');
+            expect(firstBlock(muya).meta.admonitionType).toBe('warning');
+        });
+
+        expect(muya.editor.activeContentBlock?.text).toBe('warning body\nnext line');
+        expect(muya.editor.selection.anchor?.offset).toBe(7);
+        expect(muya.editor.selection.focus?.offset).toBe(7);
+    });
+
     it('turns a paragraph into a bullet list', async () => {
         const muya = bootMuya('item\n');
         placeCursorOnFirstBlock(muya);
@@ -186,6 +203,23 @@ describe('muya.updateParagraph()', () => {
         // back to the first item at offset 0.
         expect(muya.editor.activeContentBlock?.text).toBe('b');
         expect(muya.editor.selection.anchor?.offset).toBe(1);
+    });
+
+    it('keeps the caret in the same admonition paragraph when switching admonition type', async () => {
+        const muya = bootMuya('> [!NOTE]\n>\n> warning body\n');
+        const first = placeCursorOnFirstBlock(muya);
+        first.setCursor(4, 4, true);
+
+        muya.updateParagraph('admonition warning');
+
+        await vi.waitFor(() => {
+            expect(firstBlock(muya).name).toBe('block-quote');
+            expect(firstBlock(muya).meta.admonitionType).toBe('warning');
+        });
+
+        expect(muya.editor.activeContentBlock?.text).toBe('warning body');
+        expect(muya.editor.selection.anchor?.offset).toBe(4);
+        expect(muya.editor.selection.focus?.offset).toBe(4);
     });
 
     it('keeps a multi-item selection spanning list items when toggling loose/tight', async () => {

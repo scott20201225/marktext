@@ -58,6 +58,11 @@ export const zhCN = {
         // Code block
         'Copy content': '复制内容',
         'Input Language Identifier...': '输入程序语言标识...',
+        'Note': '注释',
+        'Tip': '提示',
+        'Caution': '注意',
+        'Warning': '警告',
+        'Important': '重要',
         // emojiPicker
         'Smileys & Emotion': '笑脸 & 情绪',
         'People & Body': '人物 & 身体',

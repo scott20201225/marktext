@@ -107,6 +107,8 @@ export interface IAffiliationEntry {
      * looseness flag lives on the list, not the item.
      */
     isLooseListItem?: boolean;
+    /** Present on admonition-style block quotes. */
+    admonitionType?: string;
 }
 
 /**
@@ -174,6 +176,13 @@ function _buildEntry(block: Parent, type: string): IAffiliationEntry {
         const list = _parentListOf(block);
         entry.listItemType = list ? LIST_TYPE_BY_NAME[list.blockName] : undefined;
         entry.isLooseListItem = _isLoose(list);
+    }
+    else if (type === 'blockquote') {
+        const admonitionType = (
+            block as Parent & { meta?: { admonitionType?: string } }
+        ).meta?.admonitionType;
+        if (admonitionType)
+            entry.admonitionType = admonitionType;
     }
 
     return entry;

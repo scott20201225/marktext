@@ -1,6 +1,7 @@
 import type { TBlockToken } from '../utils/marked/types';
 import type {
     IAtxHeadingState,
+    IBlockQuoteState,
     IBulletListState,
     IListItemState,
     IOrderListState,
@@ -10,6 +11,7 @@ import type {
     ITaskListState,
     TState,
 } from './types';
+import { parseAdmonitionMarker } from './admonition';
 import { firstWordOfInfo } from '../utils';
 import logger from '../utils/logger';
 import { lexBlock } from '../utils/marked';
@@ -42,6 +44,24 @@ const CONTAINER_TOKEN_TYPES = new Set([
     'list_item',
     'footnote',
 ]);
+
+function extractAdmonitionTokens(tokens: TBlockToken[]): {
+    meta?: IBlockQuoteState['meta'];
+    tokens: TBlockToken[];
+} {
+    const [first, ...rest] = tokens;
+    if (first?.type !== 'paragraph')
+        return { tokens };
+
+    const parsed = parseAdmonitionMarker(first.text ?? '');
+    if (!parsed)
+        return { tokens };
+
+    return {
+        meta: { admonitionType: parsed.admonitionType },
+        tokens: [...rest],
+    };
+}
 
 export class MarkdownToState {
     constructor(private _options: IMarkdownToStateOptions = DEFAULT_OPTIONS) {}
@@ -111,14 +131,16 @@ export class MarkdownToState {
             }
 
             case 'blockquote': {
+                const admonition = extractAdmonitionTokens(token.tokens as TBlockToken[]);
                 state = {
                     name: 'block-quote' as const,
+                    meta: admonition.meta,
                     children: [],
                 };
                 parentList[0].push(state);
                 parentList.unshift(state.children);
                 tokens.unshift({ type: 'block-end', tokenType: 'blockquote' });
-                tokens.unshift(...(token.tokens as TBlockToken[]));
+                tokens.unshift(...admonition.tokens);
                 break;
             }
 

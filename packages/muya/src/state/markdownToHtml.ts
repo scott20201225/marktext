@@ -9,6 +9,7 @@ import loadRenderer from '../utils/diagram';
 
 import { getHighlightHtml } from '../utils/marked';
 import { generateGithubSlug } from '../utils/slug';
+import { transformAdmonitions } from './transformAdmonitions';
 import { transformFootnotes } from './transformFootnotes';
 
 // The core stylesheets (github-markdown-css, katex, prism) are inlined into the
@@ -189,6 +190,8 @@ export class MarkdownToHtml {
         this._muya?.options?.isGitlabCompatibilityEnabled ?? true,
             math: this._muya?.options?.math ?? true,
         });
+
+        html = transformAdmonitions(html);
 
         // Post-process footnotes into the standard GFM / pandoc shape (inline
         // numbered <sup> refs + bottom <section class="footnotes"> with

@@ -9,10 +9,19 @@ type Win = BrowserWindow | null | undefined
 const CROSS_BLOCK_ENABLED_PARAGRAPH: readonly string[] = [
   'codeFencesMenuItem',
   'quoteBlockMenuItem',
+  'alertMenuItem',
   'orderListMenuItem',
   'bulletListMenuItem',
   'taskListMenuItem'
 ]
+
+const ALERT_MENU_ID_BY_TYPE: Readonly<Record<string, string>> = Object.freeze({
+  note: 'noteBlockMenuItem',
+  tip: 'tipBlockMenuItem',
+  important: 'importantBlockMenuItem',
+  warning: 'warningBlockMenuItem',
+  caution: 'cautionBlockMenuItem'
+})
 
 const MENU_ID_MAP: Readonly<Record<string, string>> = Object.freeze({
   heading1MenuItem: 'h1',
@@ -108,6 +117,30 @@ export const quoteBlock = (win: Win): void => {
   transformEditorElement(win, 'blockquote')
 }
 
+const alert = (win: Win, type: string): void => {
+  transformEditorElement(win, `admonition ${type}`)
+}
+
+export const noteBlock = (win: Win): void => {
+  alert(win, 'note')
+}
+
+export const tipBlock = (win: Win): void => {
+  alert(win, 'tip')
+}
+
+export const importantBlock = (win: Win): void => {
+  alert(win, 'important')
+}
+
+export const warningBlock = (win: Win): void => {
+  alert(win, 'warning')
+}
+
+export const cautionBlock = (win: Win): void => {
+  alert(win, 'caution')
+}
+
 export const table = (win: Win): void => {
   transformEditorElement(win, 'table')
 }
@@ -150,9 +183,22 @@ export const loadParagraphCommands = (commandManager: CommandManager): void => {
 // NOTE: Don't use static `getMenuItemById` here, instead request the menu by
 //       window id from `AppMenu` manager.
 
-const setParagraphMenuItemStatus = (applicationMenu: Menu, bool: boolean): void => {
+const visitParagraphMenuItems = (
+  applicationMenu: Menu,
+  visit: (item: MenuItem) => void
+): void => {
   const paragraphMenuItem = applicationMenu.getMenuItemById('paragraphMenuEntry')!
-  paragraphMenuItem.submenu!.items.forEach((item: MenuItem) => (item.enabled = bool))
+  const walk = (item: MenuItem): void => {
+    visit(item)
+    item.submenu?.items.forEach(walk)
+  }
+  paragraphMenuItem.submenu!.items.forEach(walk)
+}
+
+const setParagraphMenuItemStatus = (applicationMenu: Menu, bool: boolean): void => {
+  visitParagraphMenuItems(applicationMenu, (item) => {
+    item.enabled = bool
+  })
 }
 
 const setMultipleStatus = (
@@ -160,14 +206,14 @@ const setMultipleStatus = (
   list: readonly string[],
   status: boolean
 ): void => {
-  const paragraphMenuItem = applicationMenu.getMenuItemById('paragraphMenuEntry')!
-  paragraphMenuItem.submenu!.items
-    .filter((item: MenuItem) => item.id && list.includes(item.id))
-    .forEach((item: MenuItem) => (item.enabled = status))
+  visitParagraphMenuItems(applicationMenu, (item) => {
+    if (item.id && list.includes(item.id)) item.enabled = status
+  })
 }
 
 export interface SelectionState {
   affiliation: Record<string, boolean>
+  admonitionType?: string
   isTable?: boolean
   isLooseListItem?: boolean
   isTaskList?: boolean
@@ -180,13 +226,19 @@ export interface SelectionState {
 
 const setCheckedMenuItem = (
   applicationMenu: Menu,
-  { affiliation, isTable, isLooseListItem }: SelectionState
+  { affiliation, admonitionType, isTable, isLooseListItem }: SelectionState
 ): void => {
-  const paragraphMenuItem = applicationMenu.getMenuItemById('paragraphMenuEntry')!
-  paragraphMenuItem.submenu!.items.forEach((item: MenuItem) => (item.checked = false))
-  paragraphMenuItem.submenu!.items.forEach((item: MenuItem) => {
+  const activeAlertMenuItemId = admonitionType ? ALERT_MENU_ID_BY_TYPE[admonitionType] : undefined
+  visitParagraphMenuItems(applicationMenu, (item) => {
+    if (item.type === 'checkbox') item.checked = false
+  })
+  visitParagraphMenuItems(applicationMenu, (item) => {
     if (!item.id) {
       return false
+    } else if (activeAlertMenuItemId && item.id === activeAlertMenuItemId) {
+      item.checked = true
+    } else if (item.id === 'quoteBlockMenuItem' && activeAlertMenuItemId) {
+      item.checked = false
     } else if (item.id === 'looseListItemMenuItem') {
       item.checked = !!isLooseListItem
     } else if (

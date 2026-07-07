@@ -58,6 +58,11 @@ export const tr = {
         // Code block
         'Copy content': 'İçeriği kopyala',
         'Input Language Identifier...': 'Dil Tanımlayıcısını girin...',
+        'Note': 'Not',
+        'Tip': 'İpucu',
+        'Caution': 'Dikkat',
+        'Warning': 'Uyarı',
+        'Important': 'Önemli',
         // emojiPicker
         'Smileys & Emotion': 'Suratlar ve Duygular',
         'People & Body': 'İnsanlar ve Beden',

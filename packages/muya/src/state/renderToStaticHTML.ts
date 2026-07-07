@@ -1,6 +1,7 @@
 import { EXPORT_DOMPURIFY_CONFIG } from '../config';
 import { sanitize } from '../utils';
 import { getHighlightHtml } from '../utils/marked';
+import { transformAdmonitions } from './transformAdmonitions';
 import { transformFootnotes } from './transformFootnotes';
 
 export interface IRenderToStaticHTMLOptions {
@@ -56,6 +57,8 @@ export function renderToStaticHTML(
         superSubScript: options.superSubScript ?? true,
         frontMatter: options.frontMatter ?? false,
     });
+
+    html = transformAdmonitions(html);
 
     // Post-process footnotes into the standard GFM / pandoc shape (inline
     // numbered <sup> + bottom <section class="footnotes"> with backrefs).

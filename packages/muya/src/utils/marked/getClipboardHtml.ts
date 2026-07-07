@@ -9,6 +9,7 @@ import superSubScriptExtension from './extensions/superSubscript';
 import fm, { frontMatterRender } from './frontMatter';
 import { DEFAULT_OPTIONS } from './options';
 import walkTokens from './walkTokens';
+import { transformAdmonitions } from '../../state/transformAdmonitions';
 
 export function getClipBoardHtml(src: string, options: ILexOption = {}) {
     options = Object.assign({}, DEFAULT_OPTIONS, options);
@@ -55,7 +56,7 @@ export function getClipBoardHtml(src: string, options: ILexOption = {}) {
 
     html += marked.parse(src);
 
-    return html;
+    return transformAdmonitions(html);
 }
 
 export function getSanitizeClipboardHtml(src: string, options: ILexOption = {}) {

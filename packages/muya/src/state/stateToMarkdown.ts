@@ -33,7 +33,8 @@ import { deepClone } from '../utils';
 
 import logger from '../utils/logger';
 import stringWidth from '../utils/stringWidth';
-import { isAnyListState } from './types';
+import { admonitionMarker } from './admonition';
+import { isAnyListState, isParagraphState } from './types';
 
 const debug = logger('export markdown: ');
 const SETEXT_SAFE_BULLET_MARKER = '*';
@@ -435,8 +436,19 @@ export default class ExportMarkdown {
     private _serializeBlockquote(state: IBlockQuoteState, indent: string) {
         const { children } = state;
         const newIndent = `${indent}> `;
+        const inner = this._convertStatesToMarkdown(children, newIndent);
+        const admonitionType = state.meta?.admonitionType;
+        if (!admonitionType)
+            return inner;
 
-        return this._convertStatesToMarkdown(children, newIndent);
+        const markerLine = `${indent}> ${admonitionMarker(admonitionType)}\n`;
+        const isEmptyBody = children.length === 1
+            && isParagraphState(children[0])
+            && children[0].text === '';
+
+        return isEmptyBody
+            ? `${markerLine}${indent}>\n`
+            : `${markerLine}${indent}>\n${inner}`;
     }
 
     private _serializeFootnote(state: IFootnoteBlockState, indent: string) {

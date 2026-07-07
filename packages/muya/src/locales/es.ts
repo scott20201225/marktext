@@ -58,6 +58,11 @@ export const es = {
         // Code block
         'Copy content': 'Copiar contenido',
         'Input Language Identifier...': 'Introducir identificador de lenguaje...',
+        'Note': 'Nota',
+        'Tip': 'Consejo',
+        'Caution': 'Precaución',
+        'Warning': 'Advertencia',
+        'Important': 'Importante',
         // emojiPicker
         'Smileys & Emotion': 'Caras y emoción',
         'People & Body': 'Personas y cuerpo',

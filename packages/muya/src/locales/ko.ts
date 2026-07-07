@@ -58,6 +58,11 @@ export const ko = {
         // Code block
         'Copy content': '내용 복사',
         'Input Language Identifier...': '언어 식별자 입력...',
+        'Note': '노트',
+        'Tip': '팁',
+        'Caution': '주의',
+        'Warning': '경고',
+        'Important': '중요',
         // emojiPicker
         'Smileys & Emotion': '스마일 & 감정',
         'People & Body': '사람 & 신체',

@@ -164,6 +164,85 @@
     padding-right: 0;
 }
 
+.mu-container blockquote.mu-admonition {
+    padding: 0.9em 1.1em 0.9em 1.3em;
+
+    color: var(--editor-color-80);
+    background: color-mix(in srgb, var(--editor-bg-color, #fff) 92%, var(--editor-color-10) 8%);
+    border: 1px solid var(--editor-color-10);
+    border-radius: 8px;
+}
+
+.mu-container blockquote.mu-admonition::before {
+    left: 0;
+    width: 4px;
+
+    border-radius: 8px 0 0 8px;
+    background: var(--admonition-color, var(--blockquote-border-color, var(--editor-color-30)));
+}
+
+.mu-container blockquote.mu-admonition > .mu-admonition-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-bottom: 0.35em;
+
+    color: var(--admonition-color, var(--editor-color-80));
+    font-weight: 600;
+    line-height: 1.2;
+}
+
+.mu-container blockquote.mu-admonition > .mu-admonition-title::before {
+    display: inline-block;
+    min-width: 1em;
+
+    font-size: 0.95em;
+    font-weight: 700;
+    line-height: 1;
+
+    content: 'ⓘ';
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-note {
+    --admonition-color: #2563eb;
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-note > .mu-admonition-title::before {
+    content: 'ⓘ';
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-tip {
+    --admonition-color: #059669;
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-tip > .mu-admonition-title::before {
+    content: '✦';
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-caution {
+    --admonition-color: #d97706;
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-caution > .mu-admonition-title::before {
+    content: '▲';
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-warning {
+    --admonition-color: #dc2626;
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-warning > .mu-admonition-title::before {
+    content: '⚠';
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-important {
+    --admonition-color: #7c3aed;
+}
+
+.mu-container blockquote.mu-admonition.mu-admonition-important > .mu-admonition-title::before {
+    content: '✱';
+}
+
 /* thematic break */
 .mu-thematic-break {
     position: relative;

@@ -1,3 +1,5 @@
+import type { TAdmonitionType } from './admonition';
+
 export interface IParagraphState {
     name: 'paragraph';
     text: string;
@@ -58,6 +60,9 @@ export interface ILinkReferenceDefinitionState {
 
 export interface IBlockQuoteState {
     name: 'block-quote';
+    meta?: {
+        admonitionType?: TAdmonitionType;
+    };
     children: TState[];
 }
 

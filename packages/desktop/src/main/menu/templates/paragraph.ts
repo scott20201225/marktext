@@ -112,6 +112,52 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
         }
       },
       {
+        id: 'alertMenuItem',
+        label: t('menu.paragraph.alert'),
+        submenu: [
+          {
+            id: 'noteBlockMenuItem',
+            label: t('menu.paragraph.noteBlock'),
+            type: 'checkbox',
+            click(_menuItem, focusedWindow) {
+              actions.noteBlock(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tipBlockMenuItem',
+            label: t('menu.paragraph.tipBlock'),
+            type: 'checkbox',
+            click(_menuItem, focusedWindow) {
+              actions.tipBlock(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'importantBlockMenuItem',
+            label: t('menu.paragraph.importantBlock'),
+            type: 'checkbox',
+            click(_menuItem, focusedWindow) {
+              actions.importantBlock(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'warningBlockMenuItem',
+            label: t('menu.paragraph.warningBlock'),
+            type: 'checkbox',
+            click(_menuItem, focusedWindow) {
+              actions.warningBlock(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'cautionBlockMenuItem',
+            label: t('menu.paragraph.cautionBlock'),
+            type: 'checkbox',
+            click(_menuItem, focusedWindow) {
+              actions.cautionBlock(focusedWindow as BrowserWindow | undefined)
+            }
+          }
+        ]
+      },
+      {
         id: 'mathBlockMenuItem',
         label: t('menu.paragraph.mathBlock'),
         type: 'checkbox',

@@ -1421,6 +1421,14 @@ const handleEditParagraph = (type: unknown) => {
     })
   } else if (editor.value) {
     editor.value.updateParagraph(type)
+    if (typeof type === 'string' && type.startsWith('admonition ')) {
+      requestAnimationFrame(() => {
+        const ed = editor.value
+        if (!ed) return
+        ed.domNode.focus()
+        ed.focus()
+      })
+    }
     // Re-sync the menu so a no-op action (e.g. "Paragraph" inside a list/quote)
     // does not leave the clicked checkbox item checked. A real conversion fires
     // its own selection-change, which resyncs again.

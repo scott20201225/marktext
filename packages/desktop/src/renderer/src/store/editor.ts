@@ -114,6 +114,7 @@ interface AffiliationEntry {
   listType?: string
   listItemType?: string
   isLooseListItem?: boolean
+  admonitionType?: string
   [key: string]: unknown
 }
 
@@ -1860,6 +1861,7 @@ interface ApplicationMenuState {
   isCodeContent: boolean
   isTable: boolean
   hasFrontMatter: boolean
+  admonitionType?: string
   affiliation: Record<string, boolean>
 }
 
@@ -1889,6 +1891,7 @@ const createApplicationMenuState = ({
     // Whether the selection contains a table.
     isTable: false,
     hasFrontMatter: !!hasFrontMatter,
+    admonitionType: undefined,
     // Contains keys about the selection type(s) (string, boolean) like "ul: true".
     affiliation: {}
   }
@@ -1930,6 +1933,14 @@ const createApplicationMenuState = ({
     // itself (derived from `meta.loose`), not via a `children` chain.
     state.isLooseListItem = !!innerList.isLooseListItem
     state.isTaskList = innerList.listType === 'task'
+  }
+
+  for (let i = aff.length - 1; i >= 0; i--) {
+    const entry = aff[i]
+    if (entry.type === 'blockquote' && entry.admonitionType) {
+      state.admonitionType = entry.admonitionType
+      break
+    }
   }
 
   // Search with block depth 3 (e.g. "ul -> li -> p" where p is the actually paragraph inside the list (item)).

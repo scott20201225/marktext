@@ -49,12 +49,13 @@ export const patchMuyaSoftBreakIme = (muya: RichMuyaLike | null | undefined): vo
       original.call(this, event)
 
       if (event.type === 'compositionstart') {
-        if (!shouldSeedSoftBreakIme(this)) {
+        const seedOffset = getSoftBreakImeSeedOffset(this)
+        if (seedOffset == null) {
           return
         }
 
         this[SOFT_BREAK_IME_ACTIVE] = true
-        appendSoftBreakImeSeed(this.domNode)
+        ensureSoftBreakImeSeed(this, seedOffset)
         return
       }
 
@@ -64,14 +65,8 @@ export const patchMuyaSoftBreakIme = (muya: RichMuyaLike | null | undefined): vo
 
       if (this[SOFT_BREAK_IME_ACTIVE]) {
         this[SOFT_BREAK_IME_ACTIVE] = false
-
-        if (typeof this.text === 'string' && this.text.endsWith(SOFT_BREAK_IME_SEED)) {
-          const offset = this.text.length - SOFT_BREAK_IME_SEED.length
-          this.text = this.text.slice(0, offset)
-          this.setCursor?.(offset, offset, true)
-        } else {
-          removeSoftBreakImeSeed(this.domNode)
-        }
+        cleanupSoftBreakImeText(this, true)
+        return
       }
 
       cleanupSoftBreakImeText(this, false)
@@ -155,41 +150,44 @@ function findPrototypeWithOwnMethod(
   return null
 }
 
-function shouldSeedSoftBreakIme(block: RichContentBlock): boolean {
-  if (typeof block.text !== 'string' || !block.text.endsWith('\n')) {
-    return false
+function getSoftBreakImeSeedOffset(block: RichContentBlock): number | null {
+  if (typeof block.text !== 'string') {
+    return null
   }
 
   const cursor = block.getCursor?.()
-  if (!cursor) {
-    return false
+  if (!cursor || cursor.start.offset !== cursor.end.offset) {
+    return null
   }
 
-  return cursor.start.offset === cursor.end.offset && cursor.end.offset === block.text.length
+  const { text } = block
+  const offset = cursor.end.offset
+  const prevChar = offset > 0 ? text[offset - 1] : ''
+  const nextChar = offset < text.length ? text[offset] : ''
+
+  if (nextChar === SOFT_BREAK_IME_SEED) {
+    return offset
+  }
+
+  if (prevChar === SOFT_BREAK_IME_SEED) {
+    return offset - 1
+  }
+
+  if (prevChar === '\n' || nextChar === '\n') {
+    return offset
+  }
+
+  return null
 }
 
-function appendSoftBreakImeSeed(domNode: HTMLElement | null | undefined): void {
-  if (!domNode) {
+function ensureSoftBreakImeSeed(block: RichContentBlock, offset: number): void {
+  const text = typeof block.text === 'string' ? block.text : ''
+  if (text[offset] === SOFT_BREAK_IME_SEED) {
     return
   }
 
-  const lastChild = domNode.lastChild
-  if (lastChild?.nodeType === Node.TEXT_NODE && lastChild.textContent === SOFT_BREAK_IME_SEED) {
-    return
-  }
-
-  domNode.append(document.createTextNode(SOFT_BREAK_IME_SEED))
-}
-
-function removeSoftBreakImeSeed(domNode: HTMLElement | null | undefined): void {
-  if (!domNode) {
-    return
-  }
-
-  const lastChild = domNode.lastChild
-  if (lastChild?.nodeType === Node.TEXT_NODE && lastChild.textContent === SOFT_BREAK_IME_SEED) {
-    domNode.removeChild(lastChild)
-  }
+  block.text = `${text.slice(0, offset)}${SOFT_BREAK_IME_SEED}${text.slice(offset)}`
+  block.setCursor?.(offset + 1, offset + 1, true)
 }
 
 function cleanupSoftBreakImeText(block: RichContentBlock, forceTrailingSeedCleanup: boolean): void {

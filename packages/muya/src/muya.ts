@@ -6,7 +6,8 @@ import type { ILocale } from './i18n/types';
 import type { IIndexCursor } from './selection/offsetCursor';
 import type { IHistorySelection, IPublicCursorInput } from './selection/types';
 import type { ITocItem } from './state/getTOC';
-import type { IBulletListState, IOrderListState, ITableState, ITaskListState, TState } from './state/types';
+import type { TAdmonitionType } from './state/admonition';
+import type { IBlockQuoteState, IBulletListState, IOrderListState, ITableState, ITaskListState, TState } from './state/types';
 import type { IMuyaOptions, Nullable } from './types';
 import Format from './block/base/format';
 import { canTurnInto, insertBlockBelowByLabel, insertFrontMatterAtStart, replaceBlockByLabel } from './block/blockTransforms';
@@ -29,6 +30,7 @@ import {
     resolveSentinelCursor,
 } from './selection/offsetCursor';
 import { isAnyListState, isAtxHeadingState, isCodeBlockState } from './state/types';
+import { isAdmonitionType } from './state/admonition';
 import { Ui } from './ui/ui';
 import { deepClone } from './utils';
 import { encodeImageSrc } from './utils/image';
@@ -124,6 +126,16 @@ function endpointPair(
     focus: Nullable<Parent>,
 ): { anchor: Parent; focus: Parent } | null {
     return anchor && focus ? { anchor, focus } : null;
+}
+
+function commandToAdmonitionType(type: string): TAdmonitionType | null {
+    const prefix = 'admonition ';
+    if (!type.startsWith(prefix))
+        return null;
+
+    const value = type.slice(prefix.length);
+
+    return isAdmonitionType(value) ? value : null;
 }
 
 export class Muya {
@@ -670,6 +682,12 @@ export class Muya {
         if (this._selectionInSameBlock())
             return false;
 
+        const admonitionType = commandToAdmonitionType(type);
+        if (admonitionType) {
+            this._wrapSelectedBlocksInAdmonition(admonitionType);
+            return true;
+        }
+
         const label = PARAGRAPH_LABEL_MAP[type];
         if (CROSS_BLOCK_LIST_LABELS.has(label)) {
             this._wrapSelectedBlocksInList(label as 'bullet-list' | 'order-list' | 'task-list');
@@ -836,6 +854,18 @@ export class Muya {
     private _wrapSelectedBlocksInQuote() {
         this._wrapSelectedBlocks(
             blocks => ({ name: 'block-quote', children: blocks.map(b => b.getState()) }),
+            container => this._selectWrappedContent(container),
+        );
+    }
+
+    /** Wrap the selected outmost blocks into an admonition-style block quote. */
+    private _wrapSelectedBlocksInAdmonition(admonitionType: TAdmonitionType) {
+        this._wrapSelectedBlocks(
+            blocks => ({
+                name: 'block-quote',
+                meta: { admonitionType },
+                children: blocks.map(b => b.getState()),
+            }),
             container => this._selectWrappedContent(container),
         );
     }
@@ -1198,6 +1228,21 @@ export class Muya {
             return;
         }
 
+        const admonitionType = commandToAdmonitionType(type);
+        if (admonitionType) {
+            const quote = this._closestBlockQuoteAtCursor();
+            if (quote) {
+                this._setBlockQuoteAdmonition(
+                    quote,
+                    this._blockQuoteAdmonitionType(quote) === admonitionType ? null : admonitionType,
+                );
+            }
+            else {
+                this._convertImmediateBlockToAdmonition(admonitionType);
+            }
+            return;
+        }
+
         const label = PARAGRAPH_LABEL_MAP[type];
         if (!label)
             return;
@@ -1222,6 +1267,14 @@ export class Muya {
         // command (handled above).
         if (label === 'paragraph')
             return this._convertLeafToParagraph();
+
+        if (label === 'block-quote') {
+            const quote = this._closestBlockQuoteAtCursor();
+            if (quote && this._blockQuoteAdmonitionType(quote)) {
+                this._setBlockQuoteAdmonition(quote, null);
+                return;
+            }
+        }
 
         // Clicking an already-active type (its block is an ancestor of the
         // cursor, i.e. the menu item is checked) toggles it off: unwrap every
@@ -1290,6 +1343,18 @@ export class Muya {
         let node: Nullable<Parent> = (this.editor.activeContentBlock ?? this.editor.selection.anchorBlock)?.parent;
         while (node) {
             if (node.blockName === 'bullet-list' || node.blockName === 'order-list' || node.blockName === 'task-list')
+                return node;
+            node = node.parent;
+        }
+
+        return null;
+    }
+
+    /** The nearest block-quote ancestor of the cursor, if any. */
+    private _closestBlockQuoteAtCursor(): Parent | null {
+        let node: Nullable<Parent> = (this.editor.activeContentBlock ?? this.editor.selection.anchorBlock)?.parent;
+        while (node) {
+            if (node.blockName === 'block-quote')
                 return node;
             node = node.parent;
         }
@@ -1383,6 +1448,67 @@ export class Muya {
             replaceBlockByLabel({ block: immediate, muya: this, label, text: '' });
         else
             insertBlockBelowByLabel({ block: immediate, muya: this, label });
+    }
+
+    private _blockQuoteAdmonitionType(block: Parent): TAdmonitionType | null {
+        const state = block.getState();
+        if (state.name !== 'block-quote')
+            return null;
+
+        return state.meta?.admonitionType ?? null;
+    }
+
+    private _replaceBlockFromState(block: Parent, state: TState) {
+        const newBlock = ScrollPage.loadBlock(state.name).create(this, state as never);
+        block.replaceWith(newBlock);
+
+        return newBlock;
+    }
+
+    private _setBlockQuoteAdmonition(
+        block: Parent,
+        admonitionType: TAdmonitionType | null,
+    ) {
+        const state = block.getState();
+        if (state.name !== 'block-quote')
+            return;
+
+        const snapshot = this._snapshotSelection();
+        const nextState: IBlockQuoteState = deepClone(state);
+        if (admonitionType)
+            nextState.meta = { ...nextState.meta, admonitionType };
+        else
+            delete nextState.meta;
+
+        const newBlock = this._replaceBlockFromState(block, nextState);
+        if (!this._restoreSelection(snapshot))
+            newBlock.firstContentInDescendant()?.setCursor(0, 0, true);
+    }
+
+    private _convertImmediateBlockToAdmonition(admonitionType: TAdmonitionType) {
+        const immediate = this._immediateBlockAtCursor();
+        if (!immediate)
+            return;
+
+        const anchorOffset = this.editor.selection.anchor?.offset ?? 0;
+        const focusOffset = this.editor.selection.focus?.offset ?? anchorOffset;
+        const nextState: IBlockQuoteState = {
+            name: 'block-quote',
+            meta: { admonitionType },
+            children: [{
+                name: 'paragraph',
+                text: this._blockLeadingText(immediate),
+            }],
+        };
+
+        const newBlock = this._replaceBlockFromState(immediate, nextState);
+        const cursorBlock = newBlock.firstContentInDescendant();
+        if (!cursorBlock)
+            return;
+
+        const clampTo = (n: number, len: number) => Math.max(0, Math.min(n, len));
+        const len = cursorBlock.text.length;
+        cursorBlock.setCursor(clampTo(anchorOffset, len), clampTo(focusOffset, len), true);
     }
 
     /**

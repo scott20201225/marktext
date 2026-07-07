@@ -58,6 +58,11 @@ export const ja = {
         // Code block
         'Copy content': '内容をコピーする',
         'Input Language Identifier...': 'プログラム言語IDを入力する...',
+        'Note': 'ノート',
+        'Tip': 'ヒント',
+        'Caution': '注意',
+        'Warning': '警告',
+        'Important': '重要',
         // emojiPicker
         'Smileys & Emotion': '笑顔 & 気持ち',
         'People & Body': '人物 & 体',

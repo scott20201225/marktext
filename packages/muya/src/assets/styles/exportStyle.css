@@ -89,6 +89,79 @@
     white-space: pre-wrap;
 }
 
+.markdown-body blockquote.admonition {
+    padding: 0.9em 1.1em 0.9em 1.3em;
+
+    border-left: 4px solid var(--admonition-color, #9ca3af);
+    background: rgba(148, 163, 184, 0.08);
+    border-radius: 8px;
+}
+
+.markdown-body blockquote.admonition .admonition-title {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35em;
+    margin-bottom: 0.35em;
+
+    color: var(--admonition-color, inherit);
+    font-weight: 600;
+}
+
+.markdown-body blockquote.admonition .admonition-title::before {
+    display: inline-block;
+    min-width: 1em;
+
+    font-size: 0.95em;
+    font-weight: 700;
+    line-height: 1;
+
+    content: 'ⓘ';
+}
+
+.markdown-body blockquote.admonition.admonition-note {
+    --admonition-color: #2563eb;
+}
+
+.markdown-body blockquote.admonition.admonition-note .admonition-title::before {
+    content: 'ⓘ';
+}
+
+.markdown-body blockquote.admonition.admonition-tip {
+    --admonition-color: #059669;
+}
+
+.markdown-body blockquote.admonition.admonition-tip .admonition-title::before {
+    content: '✦';
+}
+
+.markdown-body blockquote.admonition.admonition-caution {
+    --admonition-color: #d97706;
+}
+
+.markdown-body blockquote.admonition.admonition-caution .admonition-title::before {
+    content: '▲';
+}
+
+.markdown-body blockquote.admonition.admonition-warning {
+    --admonition-color: #dc2626;
+}
+
+.markdown-body blockquote.admonition.admonition-warning .admonition-title::before {
+    content: '⚠';
+}
+
+.markdown-body blockquote.admonition.admonition-important {
+    --admonition-color: #7c3aed;
+}
+
+.markdown-body blockquote.admonition.admonition-important .admonition-title::before {
+    content: '✱';
+}
+
+.markdown-body blockquote.admonition p:last-child {
+    margin-bottom: 0;
+}
+
 /* Render soft line breaks (Shift+Enter → a bare `\n` inside a block) the way
    the editor does (`.mu-content` is pre-wrap) instead of emitting a
    non-standard `<br>`, so the exported HTML stays CommonMark-conformant (the
