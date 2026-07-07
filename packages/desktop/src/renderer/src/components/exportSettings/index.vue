@@ -408,7 +408,7 @@ const updateTranslations = () => {
 const showDialog = (type: unknown) => {
   const exportTypeValue = String(type ?? '')
   exportType.value = exportTypeValue
-  isPrintable.value = exportTypeValue !== 'styledHtml' && exportTypeValue !== 'docx'
+  isPrintable.value = !['styledHtml', 'docx', 'png', 'jpeg'].includes(exportTypeValue)
   if (!isPrintable.value && (activeName.value === 'header' || activeName.value === 'page')) {
     activeName.value = 'info'
   }

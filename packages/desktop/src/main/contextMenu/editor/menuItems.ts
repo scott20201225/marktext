@@ -72,6 +72,30 @@ export const getInsertAfter = (): MenuItemConstructorOptions => ({
   }
 })
 
+export const getOrderedList = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.orderedList'),
+  id: 'contextOrderListMenuItem',
+  click(_menuItem, targetWindow) {
+    if (targetWindow) {
+      ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+        type: 'ol-order'
+      })
+    }
+  }
+})
+
+export const getBulletList = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.bulletList'),
+  id: 'contextBulletListMenuItem',
+  click(_menuItem, targetWindow) {
+    if (targetWindow) {
+      ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+        type: 'ul-bullet'
+      })
+    }
+  }
+})
+
 // Retained for backward compatibility
 export const CUT = getCUT()
 export const COPY = getCOPY()
@@ -81,6 +105,8 @@ export const COPY_AS_HTML = getCopyAsHtml()
 export const PASTE_AS_PLAIN_TEXT = getPasteAsPlainText()
 export const INSERT_BEFORE = getInsertBefore()
 export const INSERT_AFTER = getInsertAfter()
+export const ORDERED_LIST = getOrderedList()
+export const BULLET_LIST = getBulletList()
 
 export const SEPARATOR: MenuItemConstructorOptions = {
   type: 'separator'

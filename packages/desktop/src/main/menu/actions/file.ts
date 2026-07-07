@@ -49,6 +49,20 @@ const getExportExtensionFilter = (type: ExportType): Electron.FileFilter[] | und
         extensions: ['pdf']
       }
     ]
+  } else if (type === 'png') {
+    return [
+      {
+        name: 'PNG Image',
+        extensions: ['png']
+      }
+    ]
+  } else if (type === 'jpeg') {
+    return [
+      {
+        name: 'JPEG Image',
+        extensions: ['jpg', 'jpeg']
+      }
+    ]
   } else if (type === 'docx') {
     return [
       {
@@ -94,6 +108,13 @@ interface ExportPayload {
   title?: string
   pageOptions?: PageOptions
 }
+
+interface ExportImageSize {
+  width: number
+  height: number
+}
+
+const MAX_EXPORT_IMAGE_SIZE = 16000
 
 const runExternalCommand = async(
   command: string,
@@ -168,6 +189,127 @@ const exportMarkdownToDocx = async(
   }
 }
 
+const waitForExportWindowReady = async(exportWindow: BrowserWindow): Promise<void> => {
+  await exportWindow.webContents.executeJavaScript(`
+    new Promise((resolve) => {
+      const done = () => requestAnimationFrame(() => requestAnimationFrame(resolve))
+      const onReady = () => {
+        const imagePromises = Array.from(document.images || []).map((image) => {
+          if (image.complete) {
+            return Promise.resolve()
+          }
+          return new Promise((imageResolve) => {
+            image.addEventListener('load', imageResolve, { once: true })
+            image.addEventListener('error', imageResolve, { once: true })
+          })
+        })
+        const fontsReady = document.fonts && 'ready' in document.fonts
+          ? document.fonts.ready
+          : Promise.resolve()
+
+        Promise.all([...imagePromises, fontsReady]).then(done).catch(done)
+      }
+
+      if (document.readyState === 'complete') {
+        onReady()
+      } else {
+        window.addEventListener('load', onReady, { once: true })
+      }
+
+      setTimeout(done, 10000)
+    })
+  `)
+}
+
+const getExportImageSize = async(exportWindow: BrowserWindow): Promise<ExportImageSize> => {
+  return exportWindow.webContents.executeJavaScript(`
+    (() => {
+      const root = document.documentElement
+      const body = document.body
+      const width = Math.max(
+        root?.scrollWidth || 0,
+        root?.offsetWidth || 0,
+        root?.clientWidth || 0,
+        body?.scrollWidth || 0,
+        body?.offsetWidth || 0,
+        body?.clientWidth || 0
+      )
+      const height = Math.max(
+        root?.scrollHeight || 0,
+        root?.offsetHeight || 0,
+        root?.clientHeight || 0,
+        body?.scrollHeight || 0,
+        body?.offsetHeight || 0,
+        body?.clientHeight || 0
+      )
+      return {
+        width: Math.max(1, Math.ceil(width)),
+        height: Math.max(1, Math.ceil(height))
+      }
+    })()
+  `)
+}
+
+const assertExportImageSize = (type: 'png' | 'jpeg', size: ExportImageSize): void => {
+  if (size.width > MAX_EXPORT_IMAGE_SIZE || size.height > MAX_EXPORT_IMAGE_SIZE) {
+    throw new Error(
+      `Document is too large to export as ${type.toUpperCase()} image (${size.width}x${size.height}).`
+    )
+  }
+}
+
+const exportHtmlToImage = async(
+  filePath: string,
+  html: string,
+  type: 'png' | 'jpeg',
+  dirname?: string
+): Promise<void> => {
+  const workDir = await fsPromises.mkdtemp(path.join(tmpdir(), 'marktext-image-'))
+  const sourcePath = path.join(workDir, 'export.html')
+  const exportWindow = new BrowserWindow({
+    show: false,
+    width: 1280,
+    height: 900,
+    backgroundColor: '#ffffff',
+    useContentSize: true,
+    webPreferences: {
+      sandbox: true,
+      contextIsolation: true,
+      backgroundThrottling: false,
+      spellcheck: false
+    }
+  })
+
+  try {
+    await fsPromises.writeFile(sourcePath, injectBaseHref(html, dirname), 'utf8')
+    await exportWindow.loadURL(pathToFileURL(sourcePath).href)
+    await waitForExportWindowReady(exportWindow)
+
+    let size = await getExportImageSize(exportWindow)
+    assertExportImageSize(type, size)
+
+    exportWindow.setContentSize(size.width, size.height)
+    await waitForExportWindowReady(exportWindow)
+
+    size = await getExportImageSize(exportWindow)
+    assertExportImageSize(type, size)
+    exportWindow.setContentSize(size.width, size.height)
+
+    await exportWindow.webContents.executeJavaScript(`
+      new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve)))
+    `)
+
+    const image = await exportWindow.webContents.capturePage()
+    const buffer = type === 'png' ? image.toPNG() : image.toJPEG(95)
+    await fsPromises.writeFile(filePath, buffer)
+  } finally {
+    if (!exportWindow.isDestroyed()) {
+      exportWindow.destroy()
+    }
+    await fsPromises.rm(workDir, { recursive: true, force: true })
+  }
+}
+
 // Handle the export response from renderer process.
 const handleResponseForExport = async(e: IpcMainEvent, payload: ExportPayload): Promise<void> => {
   const { type, content, markdown, pathname, title, pageOptions } = payload
@@ -190,7 +332,12 @@ const handleResponseForExport = async(e: IpcMainEvent, payload: ExportPayload): 
 
   if (filePath && !canceled) {
     try {
-      if (type === 'docx') {
+      if (type === 'png' || type === 'jpeg') {
+        if (!content) {
+          throw new Error('No HTML content found.')
+        }
+        await exportHtmlToImage(filePath, content, type, pathname ? dirname : undefined)
+      } else if (type === 'docx') {
         if (isOsx) {
           if (!content) {
             throw new Error('No HTML content found.')

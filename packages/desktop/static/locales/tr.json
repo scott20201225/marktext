@@ -21,6 +21,8 @@
       "export": "Dışa Aktar",
       "exportHtml": "HTML Olarak Dışa Aktar",
       "exportWord": "Word olarak dışa aktar",
+      "exportPng": "PNG olarak dışa aktar",
+      "exportJpeg": "JPEG olarak dışa aktar",
       "exportPdf": "PDF Olarak Dışa Aktar",
       "import": "İçe Aktar",
       "print": "Yazdır",

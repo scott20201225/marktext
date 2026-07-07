@@ -42,7 +42,7 @@ export const getCssForOptions = async(options: PdfCssOptions): Promise<string> =
     theme,
     headerFooterFontSize
   } = options
-  const isPrintable = type !== 'styledHtml'
+  const isPrintable = type === 'pdf' || type === 'print'
 
   let output = ''
   if (isPrintable) {
@@ -108,6 +108,36 @@ export const getCssForOptions = async(options: PdfCssOptions): Promise<string> =
     .page-footer .hf-container {
       font-size: ${headerFooterFontSize}px;
     }`
+  }
+
+  // Image export should hug the content more closely than document export.
+  // The default GitHub markdown stylesheet carries a centered max-width layout
+  // with 45px padding, which produces large blank left/right gutters in the
+  // captured PNG/JPEG. Switch to a content-sized page and tighten the padding.
+  if (type === 'png' || type === 'jpeg') {
+    output += `
+      html, body {
+        margin: 0 !important;
+        padding: 0 !important;
+        width: max-content;
+        min-width: 0 !important;
+        overflow: hidden;
+      }
+      .markdown-body {
+        display: inline-block !important;
+        box-sizing: border-box;
+        min-width: 0 !important;
+        max-width: none !important;
+        margin: 0 !important;
+        padding: 24px !important;
+      }
+      .markdown-body > :first-child {
+        margin-top: 0 !important;
+      }
+      .markdown-body > :last-child {
+        margin-bottom: 0 !important;
+      }
+    `
   }
 
   if (isPrintable) {

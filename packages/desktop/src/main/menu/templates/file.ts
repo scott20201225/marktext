@@ -167,6 +167,18 @@ export default function(
           }
         },
         {
+          label: t('menu.file.exportPng'),
+          click(_menuItem, browserWindow) {
+            actions.exportFile(browserWindow as BrowserWindow | undefined, 'png')
+          }
+        },
+        {
+          label: t('menu.file.exportJpeg'),
+          click(_menuItem, browserWindow) {
+            actions.exportFile(browserWindow as BrowserWindow | undefined, 'jpeg')
+          }
+        },
+        {
           label: t('menu.file.exportPdf'),
           accelerator: keybindings.getAccelerator('file.export-file.pdf') ?? undefined,
           click(_menuItem, browserWindow) {

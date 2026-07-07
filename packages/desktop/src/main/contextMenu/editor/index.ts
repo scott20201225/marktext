@@ -8,7 +8,9 @@ import {
   getPasteAsPlainText,
   SEPARATOR,
   getInsertBefore,
-  getInsertAfter
+  getInsertAfter,
+  getOrderedList,
+  getBulletList
 } from './menuItems'
 import spellcheckMenuBuilder from './spellcheck'
 import { t } from '../../i18n'
@@ -42,19 +44,67 @@ type ContextMenuEvent = {
   readonly defaultPrevented?: boolean
 }
 
+interface ParagraphContextState {
+  showOrderedList: boolean
+  showBulletList: boolean
+}
+
+const COPY_RELATED_MENU_IDS = new Set([
+  'cutMenuItem',
+  'copyMenuItem',
+  'copyAsRichMenuItem',
+  'copyAsHtmlMenuItem'
+])
+
+const hasSelectedText = (selectionText: string): boolean => selectionText.trim().length > 0
+
+const getParagraphContextState = (): ParagraphContextState => {
+  const appMenu = Menu.getApplicationMenu()
+  if (!appMenu) {
+    return {
+      showOrderedList: false,
+      showBulletList: false
+    }
+  }
+
+  const orderedListMenuItem = appMenu.getMenuItemById('orderListMenuItem')
+  const bulletListMenuItem = appMenu.getMenuItemById('bulletListMenuItem')
+
+  return {
+    showOrderedList: !!orderedListMenuItem?.enabled,
+    showBulletList: !!bulletListMenuItem?.enabled
+  }
+}
+
 // Dynamically fetch menu items to ensure correct translation
-const getContextItems = (): MenuItemConstructorOptions[] => [
-  getInsertBefore(),
-  getInsertAfter(),
-  SEPARATOR,
-  getCUT(),
-  getCOPY(),
-  getPASTE(),
-  SEPARATOR,
-  getCopyAsRich(),
-  getCopyAsHtml(),
-  getPasteAsPlainText()
-]
+const getContextItems = (selectionText: string): MenuItemConstructorOptions[] => {
+  const items: MenuItemConstructorOptions[] = [getInsertBefore(), getInsertAfter()]
+  const shouldShowParagraphListActions = hasSelectedText(selectionText)
+
+  if (shouldShowParagraphListActions) {
+    const { showOrderedList, showBulletList } = getParagraphContextState()
+    const paragraphItems: MenuItemConstructorOptions[] = []
+    if (showOrderedList) paragraphItems.push(getOrderedList())
+    if (showBulletList) paragraphItems.push(getBulletList())
+
+    if (paragraphItems.length > 0) {
+      items.push(SEPARATOR, ...paragraphItems)
+    }
+  }
+
+  items.push(
+    SEPARATOR,
+    getCUT(),
+    getCOPY(),
+    getPASTE(),
+    SEPARATOR,
+    getCopyAsRich(),
+    getCopyAsHtml(),
+    getPasteAsPlainText()
+  )
+
+  return items
+}
 
 const isInsideEditor = (params: ContextMenuParams): boolean => {
   const { isEditable, editFlags, inputFieldType } = params
@@ -103,10 +153,11 @@ export const showEditorContextMenu = (
       menu.append(new MenuItem(SEPARATOR))
     }
 
-    const contextItems = getContextItems()
-    const copyItems = [contextItems[3], contextItems[4], contextItems[8], contextItems[7]] // CUT, COPY, COPY_AS_HTML, COPY_AS_RICH
-    copyItems.forEach((item) => {
-      if (item) item.enabled = canCopy
+    const contextItems = getContextItems(selectionText)
+    contextItems.forEach((item) => {
+      if (item.id && COPY_RELATED_MENU_IDS.has(item.id)) {
+        item.enabled = canCopy
+      }
     })
     contextItems.forEach((item) => {
       menu.append(new MenuItem(item))

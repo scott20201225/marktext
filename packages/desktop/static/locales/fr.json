@@ -21,6 +21,8 @@
       "export": "Exporter",
       "exportHtml": "Exporter en HTML",
       "exportWord": "Exporter en Word",
+      "exportPng": "Exporter en PNG",
+      "exportJpeg": "Exporter en JPEG",
       "exportPdf": "Exporter en PDF",
       "import": "Importer",
       "print": "Imprimer",

@@ -21,6 +21,8 @@
       "export": "导出",
       "exportHtml": "导出为 HTML",
       "exportWord": "导出为 Word",
+      "exportPng": "导出为 PNG",
+      "exportJpeg": "导出为 JPEG",
       "exportPdf": "导出为 PDF",
       "import": "导入",
       "print": "打印",

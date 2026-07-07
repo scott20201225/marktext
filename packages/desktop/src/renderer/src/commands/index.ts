@@ -163,6 +163,22 @@ const commands: CommandDescriptor[] = [
         }
       },
       {
+        id: 'file.export-file-png',
+        description: 'Export as PNG',
+        execute: async() => {
+          await delay(50)
+          bus.emit('showExportDialog', 'png')
+        }
+      },
+      {
+        id: 'file.export-file-jpeg',
+        description: 'Export as JPEG',
+        execute: async() => {
+          await delay(50)
+          bus.emit('showExportDialog', 'jpeg')
+        }
+      },
+      {
         id: 'file.export-file-pdf',
         description: 'Export as PDF',
         execute: async() => {

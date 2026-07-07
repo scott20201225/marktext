@@ -69,9 +69,17 @@ export const PANDOC_EXTENSIONS: readonly string[] = Object.freeze([
 
 export const BLACK_LIST: readonly string[] = Object.freeze(['$RECYCLE.BIN'])
 
-export const EXTENSION_HASN: Readonly<{ styledHtml: string; docx: string; pdf: string }> = Object.freeze({
+export const EXTENSION_HASN: Readonly<{
+  styledHtml: string
+  docx: string
+  png: string
+  jpeg: string
+  pdf: string
+}> = Object.freeze({
   styledHtml: '.html',
   docx: '.docx',
+  png: '.png',
+  jpeg: '.jpg',
   pdf: '.pdf'
 })
 
