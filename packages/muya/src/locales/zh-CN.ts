@@ -58,7 +58,7 @@ export const zhCN = {
         // Code block
         'Copy content': '复制内容',
         'Input Language Identifier...': '输入程序语言标识...',
-        'Note': '注释',
+        'Note': '提醒',
         'Tip': '提示',
         'Caution': '注意',
         'Warning': '警告',

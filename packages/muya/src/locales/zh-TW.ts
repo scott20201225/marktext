@@ -58,7 +58,7 @@ export const zhTW = {
         // Code block
         'Copy content': '複製內容',
         'Input Language Identifier...': '輸入程式語言識別碼...',
-        'Note': '註解',
+        'Note': '提醒',
         'Tip': '提示',
         'Caution': '注意',
         'Warning': '警告',
