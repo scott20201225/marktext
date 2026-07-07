@@ -138,6 +138,7 @@ export interface IpcSendChannels {
       type: ExportType
       title: string
       content: string
+      markdown?: string
       filename: string
       pathname: string
       pageOptions: PageOptions

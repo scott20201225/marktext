@@ -20,6 +20,7 @@
       "rename": "Yeniden Adlandır",
       "export": "Dışa Aktar",
       "exportHtml": "HTML Olarak Dışa Aktar",
+      "exportWord": "Word olarak dışa aktar",
       "exportPdf": "PDF Olarak Dışa Aktar",
       "import": "İçe Aktar",
       "print": "Yazdır",

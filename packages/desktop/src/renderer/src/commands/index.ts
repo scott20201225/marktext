@@ -155,6 +155,14 @@ const commands: CommandDescriptor[] = [
         }
       },
       {
+        id: 'file.export-file-word',
+        description: 'Export as Word',
+        execute: async() => {
+          await delay(50)
+          bus.emit('showExportDialog', 'docx')
+        }
+      },
+      {
         id: 'file.export-file-pdf',
         description: 'Export as PDF',
         execute: async() => {

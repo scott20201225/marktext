@@ -1,5 +1,9 @@
+import fsPromises from 'fs/promises'
 import { rename as fsRename } from 'fs-extra'
 import path from 'path'
+import { spawn } from 'child_process'
+import { tmpdir } from 'os'
+import { pathToFileURL } from 'url'
 import {
   BrowserWindow,
   app,
@@ -16,13 +20,13 @@ import { checkUpdates, userSetting } from './marktext'
 import { showTabBar } from './view'
 import { COMMANDS } from '../../commands'
 import type { CommandManager } from '../../commands'
-import { EXTENSION_HASN, PANDOC_EXTENSIONS, URL_REG } from '../../config'
+import { EXTENSION_HASN, PANDOC_EXTENSIONS, URL_REG, isOsx } from '../../config'
 import { normalizeAndResolvePath, writeFile } from '../../filesystem'
 import { writeMarkdownFile } from '../../filesystem/markdown'
 import { getPath, getRecommendTitleFromMarkdownString } from '../../utils'
 import pandoc from '../../utils/pandoc'
 import { t } from '../../i18n'
-import type { UnsavedFile } from '@shared/types/files'
+import type { ExportType, UnsavedFile } from '@shared/types/files'
 
 type Win = BrowserWindow | null | undefined
 
@@ -37,12 +41,19 @@ interface PageOptions {
 // the renderer should communicate only with the editor window for file relevant stuff.
 // E.g. "mt::save-tabs" --> "mt::window-save-tabs$wid:<windowId>"
 
-const getExportExtensionFilter = (type: string): Electron.FileFilter[] | undefined => {
+const getExportExtensionFilter = (type: ExportType): Electron.FileFilter[] | undefined => {
   if (type === 'pdf') {
     return [
       {
         name: 'Portable Document Format',
         extensions: ['pdf']
+      }
+    ]
+  } else if (type === 'docx') {
+    return [
+      {
+        name: 'Microsoft Word Document',
+        extensions: ['docx']
       }
     ]
   } else if (type === 'styledHtml') {
@@ -76,16 +87,90 @@ const getPdfPageOptions = (options?: PageOptions): Record<string, unknown> => {
 }
 
 interface ExportPayload {
-  type: string
+  type: ExportType
   content?: string
+  markdown?: string
   pathname?: string
   title?: string
   pageOptions?: PageOptions
 }
 
+const runExternalCommand = async(
+  command: string,
+  args: string[],
+  options: { cwd?: string } = {}
+): Promise<void> => {
+  await new Promise<void>((resolve, reject) => {
+    const proc = spawn(command, args, {
+      cwd: options.cwd,
+      stdio: ['ignore', 'pipe', 'pipe']
+    })
+    let stderr = ''
+    proc.stderr.on('data', (chunk: Buffer | string) => {
+      stderr += chunk.toString()
+    })
+    proc.on('error', reject)
+    proc.on('close', (code) => {
+      if (code === 0) {
+        resolve()
+        return
+      }
+      reject(new Error(stderr.trim() || `${command} exited with code ${code ?? 'unknown'}.`))
+    })
+  })
+}
+
+const injectBaseHref = (html: string, dirname?: string): string => {
+  if (!dirname || /<base\b/i.test(html)) {
+    return html
+  }
+
+  const href = pathToFileURL(path.resolve(dirname) + path.sep).href
+  return html.replace(/<head([^>]*)>/i, `<head$1><base href="${href}">`)
+}
+
+const exportHtmlToDocx = async(filePath: string, html: string, dirname?: string): Promise<void> => {
+  const workDir = await fsPromises.mkdtemp(path.join(tmpdir(), 'marktext-docx-'))
+  const sourcePath = path.join(workDir, 'export.html')
+
+  try {
+    await fsPromises.writeFile(sourcePath, injectBaseHref(html, dirname), 'utf8')
+    await runExternalCommand('/usr/bin/textutil', [
+      '-convert',
+      'docx',
+      '-output',
+      filePath,
+      sourcePath
+    ])
+  } finally {
+    await fsPromises.rm(workDir, { recursive: true, force: true })
+  }
+}
+
+const exportMarkdownToDocx = async(
+  filePath: string,
+  markdown: string,
+  dirname: string
+): Promise<void> => {
+  const workDir = await fsPromises.mkdtemp(path.join(tmpdir(), 'marktext-docx-'))
+  const sourcePath = path.join(workDir, 'export.md')
+  const pandocCommand = process.env.MARKTEXT_PANDOC || 'pandoc'
+
+  try {
+    await fsPromises.writeFile(sourcePath, markdown, 'utf8')
+    await runExternalCommand(
+      pandocCommand,
+      ['-s', '-f', 'markdown', '-t', 'docx', '--resource-path', dirname, sourcePath, '-o', filePath],
+      { cwd: dirname }
+    )
+  } finally {
+    await fsPromises.rm(workDir, { recursive: true, force: true })
+  }
+}
+
 // Handle the export response from renderer process.
 const handleResponseForExport = async(e: IpcMainEvent, payload: ExportPayload): Promise<void> => {
-  const { type, content, pathname, title, pageOptions } = payload
+  const { type, content, markdown, pathname, title, pageOptions } = payload
   const win = BrowserWindow.fromWebContents(e.sender)
   if (!win) {
     return
@@ -105,7 +190,23 @@ const handleResponseForExport = async(e: IpcMainEvent, payload: ExportPayload): 
 
   if (filePath && !canceled) {
     try {
-      if (type === 'pdf') {
+      if (type === 'docx') {
+        if (isOsx) {
+          if (!content) {
+            throw new Error('No HTML content found.')
+          }
+          await exportHtmlToDocx(filePath, content, pathname ? dirname : undefined)
+        } else {
+          if (!pandoc.exists()) {
+            noticePandocNotFound(win)
+            return
+          }
+          if (!markdown) {
+            throw new Error('No Markdown content found.')
+          }
+          await exportMarkdownToDocx(filePath, markdown, dirname)
+        }
+      } else if (type === 'pdf') {
         // Build a clickable bookmark/outline tree from the document's h1-h6
         // headings so exported PDFs have a navigation pane (#2989). The outline
         // is derived from the tagged-PDF structure tree, so generateTaggedPDF is
@@ -683,7 +784,7 @@ ipcMain.on('mt::cmd-import-file', (e) => {
 
 // --- menu -------------------------------------
 
-export const exportFile = (win: Win, type: string): void => {
+export const exportFile = (win: Win, type: ExportType): void => {
   if (win && win.webContents) {
     win.webContents.send('mt::show-export-dialog', type)
   }

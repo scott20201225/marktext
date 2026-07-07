@@ -20,6 +20,7 @@
       "rename": "Renommer",
       "export": "Exporter",
       "exportHtml": "Exporter en HTML",
+      "exportWord": "Exporter en Word",
       "exportPdf": "Exporter en PDF",
       "import": "Importer",
       "print": "Imprimer",

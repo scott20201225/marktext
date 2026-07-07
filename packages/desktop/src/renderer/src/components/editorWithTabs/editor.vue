@@ -1277,7 +1277,7 @@ const handleExport = async (options: unknown) => {
   const opts = options as ExportOptions
   const { type, headerFooterStyled, htmlTitle } = opts
 
-  if (!/^pdf|print|styledHtml$/.test(type)) {
+  if (!/^(pdf|print|styledHtml|docx)$/.test(type)) {
     throw new Error(`Invalid type to export: "${type}".`)
   }
 
@@ -1302,6 +1302,27 @@ const handleExport = async (options: unknown) => {
         log.error('Failed to export document:', err)
         notice.notify({
           title: t('editor.export.failed', { type: htmlTitle || 'html' }),
+          type: 'error',
+          message:
+            (err as { message?: string } | null | undefined)?.message ?? t('editor.export.error')
+        })
+      }
+      break
+    }
+    case 'docx': {
+      try {
+        const content = await exportStyledHTML(editor.value, markdown, {
+          title: htmlTitle || '',
+          printOptimization: false,
+          extraCss,
+          toc: htmlToc,
+          dir: props.textDirection
+        })
+        editorStore.EXPORT({ type, content, markdown })
+      } catch (err) {
+        log.error('Failed to export document:', err)
+        notice.notify({
+          title: t('editor.export.failed', { type: 'Word' }),
           type: 'error',
           message:
             (err as { message?: string } | null | undefined)?.message ?? t('editor.export.error')

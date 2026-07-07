@@ -20,6 +20,7 @@
       "rename": "重命名",
       "export": "导出",
       "exportHtml": "导出为 HTML",
+      "exportWord": "导出为 Word",
       "exportPdf": "导出为 PDF",
       "import": "导入",
       "print": "打印",

@@ -85,6 +85,7 @@ interface FormatLinkClickPayload {
 interface ExportPayload {
   type: string
   content?: string
+  markdown?: string
   pageOptions?: PageOptions
 }
 
@@ -1545,7 +1546,7 @@ export const useEditorStore = defineStore('editor', {
       )
     },
 
-    EXPORT({ type, content, pageOptions }: ExportPayload): void {
+    EXPORT({ type, content, markdown, pageOptions }: ExportPayload): void {
       if (this.currentFile === null) return
 
       let title = ''
@@ -1568,6 +1569,7 @@ export const useEditorStore = defineStore('editor', {
         type: type as ExportPayload['type'] as never,
         title,
         content: content ?? '',
+        markdown: markdown ?? this.currentFile.markdown,
         filename,
         pathname,
         pageOptions: pageOptions ?? {}

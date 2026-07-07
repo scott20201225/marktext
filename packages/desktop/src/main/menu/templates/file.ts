@@ -161,6 +161,12 @@ export default function(
           }
         },
         {
+          label: t('menu.file.exportWord'),
+          click(_menuItem, browserWindow) {
+            actions.exportFile(browserWindow as BrowserWindow | undefined, 'docx')
+          }
+        },
+        {
           label: t('menu.file.exportPdf'),
           accelerator: keybindings.getAccelerator('file.export-file.pdf') ?? undefined,
           click(_menuItem, browserWindow) {
