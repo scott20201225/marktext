@@ -277,8 +277,10 @@ class EditorWindow extends BaseWindow {
 
     mainWindowState.manage(win)
 
-    // Disable application menu shortcuts because we want to handle key bindings ourself.
-    win.webContents.setIgnoreMenuShortcuts(true)
+    // Windows uses native top-level mnemonics (Alt+F, Alt+E, ...). Keep menu
+    // accelerators visible in the menu but route actual command handling
+    // through our shortcut registry.
+    win.webContents.setIgnoreMenuShortcuts(!isWindows)
 
     // Delay load files and directories after the current control flow.
     setTimeout(() => {

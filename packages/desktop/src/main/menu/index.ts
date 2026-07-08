@@ -1,6 +1,6 @@
 import fs from 'fs'
 import path from 'path'
-import { app, Menu, ipcMain, type BrowserWindow } from 'electron'
+import { app, Menu, ipcMain, type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import log from 'electron-log'
 import { DEFAULT_LANGUAGE } from 'common/i18n'
 import { ensureDirSync, isDirectory2, isFile2 } from 'common/filesystem'
@@ -39,6 +39,30 @@ interface AddEditorMenuOptions {
 interface ThemeMenuChange {
   theme?: string
   followSystemTheme?: boolean
+}
+
+const prepareMenuTemplate = (
+  template: MenuItemConstructorOptions[]
+): MenuItemConstructorOptions[] => {
+  if (!isWindows) {
+    return template
+  }
+
+  const disableAccelerators = (item: MenuItemConstructorOptions): MenuItemConstructorOptions => {
+    const cloned: MenuItemConstructorOptions = { ...item }
+
+    if (cloned.accelerator) {
+      cloned.registerAccelerator = false
+    }
+
+    if (Array.isArray(cloned.submenu)) {
+      cloned.submenu = cloned.submenu.map(disableAccelerators)
+    }
+
+    return cloned
+  }
+
+  return template.map(disableAccelerators)
 }
 
 class AppMenu {
@@ -427,14 +451,16 @@ class AppMenu {
       recentUsedDocuments = this.getRecentlyUsedDocuments()
     }
 
-    const menuTemplate = configureMenu(this._keybindings, this._preferences, recentUsedDocuments)
+    const menuTemplate = prepareMenuTemplate(
+      configureMenu(this._keybindings, this._preferences, recentUsedDocuments)
+    )
     const menu = Menu.buildFromTemplate(menuTemplate)
     return { menu, type: MenuType.EDITOR }
   }
 
   _buildSettingMenu(): WindowMenuEntry {
     if (isOsx) {
-      const menuTemplate = configSettingMenu(this._keybindings)
+      const menuTemplate = prepareMenuTemplate(configSettingMenu(this._keybindings))
       const menu = Menu.buildFromTemplate(menuTemplate)
       return { menu, type: MenuType.SETTINGS }
     }
