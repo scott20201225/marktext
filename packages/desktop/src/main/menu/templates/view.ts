@@ -2,6 +2,7 @@ import { type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import * as actions from '../actions/view'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   const submenu: MenuItemConstructorOptions[] = [
@@ -86,7 +87,7 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   ]
 
   const viewMenu: MenuItemConstructorOptions = {
-    label: t('menu.view.view'),
+    label: withTopLevelMenuMnemonic('view', t('menu.view.view')),
     submenu
   }
 

@@ -2,6 +2,7 @@ import { type MenuItemConstructorOptions } from 'electron'
 import * as actions from '../actions/theme'
 import { t } from '../../i18n'
 import type Preference from '../../preferences'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 // [i18nLabelKey, themeId] for each selectable theme. The menu label is
 // `menu.theme.<labelKey>`; `themeId` is both the menu item id and the value
@@ -88,7 +89,7 @@ export default function(userPreference: Preference): MenuItemConstructorOptions 
   )
 
   return {
-    label: t('menu.theme.theme'),
+    label: withTopLevelMenuMnemonic('theme', t('menu.theme.theme')),
     id: 'themeMenu',
     submenu
   }

@@ -2,11 +2,12 @@ import { type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import * as actions from '../actions/paragraph'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   return {
     id: 'paragraphMenuEntry',
-    label: t('menu.paragraph.title'),
+    label: withTopLevelMenuMnemonic('paragraph', t('menu.paragraph.title')),
     submenu: [
       {
         id: 'heading1MenuItem',

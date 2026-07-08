@@ -1,10 +1,11 @@
 import { type MenuItemConstructorOptions } from 'electron'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   return {
-    label: t('menu.edit.edit'),
+    label: withTopLevelMenuMnemonic('edit', t('menu.edit.edit')),
     submenu: [
       {
         label: t('menu.edit.cut'),

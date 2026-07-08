@@ -4,6 +4,7 @@ import { isFile } from 'common/filesystem'
 import * as actions from '../actions/help'
 import { checkUpdates } from '../actions/marktext'
 import { t } from '../../i18n'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 /// Check whether the package is updatable at runtime.
 const isUpdatable = (): boolean => {
@@ -92,7 +93,7 @@ export default function(): MenuItemConstructorOptions {
   ]
 
   const helpMenu: MenuItemConstructorOptions = {
-    label: t('menu.help.help'),
+    label: withTopLevelMenuMnemonic('help', t('menu.help.help')),
     role: 'help',
     submenu
   }

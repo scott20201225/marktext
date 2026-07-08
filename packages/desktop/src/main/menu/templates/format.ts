@@ -2,11 +2,12 @@ import { type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import * as actions from '../actions/format'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   return {
     id: 'formatMenuItem',
-    label: t('menu.format.format'),
+    label: withTopLevelMenuMnemonic('format', t('menu.format.format')),
     submenu: [
       {
         id: 'strongMenuItem',

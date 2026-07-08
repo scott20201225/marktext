@@ -5,6 +5,7 @@ import { isOsx } from '../../config'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
 import type Preference from '../../preferences'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(
   keybindings: Keybindings,
@@ -47,7 +48,7 @@ export default function(
   ]
 
   const fileMenu: MenuItemConstructorOptions = {
-    label: t('menu.file.file'),
+    label: withTopLevelMenuMnemonic('file', t('menu.file.file')),
     submenu
   }
 

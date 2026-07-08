@@ -4,6 +4,7 @@ import { zoomIn, zoomOut } from '../../windows/utils'
 import { isOsx } from '../../config'
 import { t } from '../../i18n'
 import type Keybindings from '../../keyboard/shortcutHandler'
+import { withTopLevelMenuMnemonic } from './mnemonics'
 
 export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   const submenu: MenuItemConstructorOptions[] = [
@@ -55,7 +56,7 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
   ]
 
   const menu: MenuItemConstructorOptions = {
-    label: t('menu.window.title'),
+    label: withTopLevelMenuMnemonic('window', t('menu.window.title')),
     role: 'window',
     submenu
   }
