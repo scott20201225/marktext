@@ -246,6 +246,23 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
         click(_menuItem, focusedWindow) {
           actions.frontMatter(focusedWindow as BrowserWindow | undefined)
         }
+      },
+      {
+        type: 'separator'
+      },
+      {
+        id: 'insertParagraphBeforeMenuItem',
+        label: t('contextMenu.insertParagraphBefore'),
+        click(_menuItem, focusedWindow) {
+          actions.insertParagraphBefore(focusedWindow as BrowserWindow | undefined)
+        }
+      },
+      {
+        id: 'insertParagraphAfterMenuItem',
+        label: t('contextMenu.insertParagraphAfter'),
+        click(_menuItem, focusedWindow) {
+          actions.insertParagraphAfter(focusedWindow as BrowserWindow | undefined)
+        }
       }
     ]
   }

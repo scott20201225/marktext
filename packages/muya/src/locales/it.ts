@@ -30,6 +30,8 @@ export const it = {
         'Vega Chart': 'Grafico Vega',
         'Mermaid': 'Mermaid',
         'Plantuml': 'PlantUML',
+        'Flowchart': 'Diagramma di flusso',
+        'Sequence': 'Diagramma di sequenza',
         'basic blocks': 'blocchi di base',
         'headings': 'titoli',
         'advanced blocks': 'blocchi avanzati',

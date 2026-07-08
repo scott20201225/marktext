@@ -33,6 +33,8 @@ export const tr = {
         'Vega Chart': 'Vega Grafiği',
         'Mermaid': 'Mermaid',
         'Plantuml': 'Plantuml',
+        'Flowchart': 'Akış Şeması',
+        'Sequence': 'Sekans Diyagramı',
         'basic blocks': 'temel bloklar',
         'headings': 'başlıklar',
         'advanced blocks': 'gelişmiş bloklar',

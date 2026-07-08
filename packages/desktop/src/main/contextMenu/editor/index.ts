@@ -10,7 +10,8 @@ import {
   getInsertBefore,
   getInsertAfter,
   getOrderedList,
-  getBulletList
+  getBulletList,
+  getTaskList
 } from './menuItems'
 import spellcheckMenuBuilder from './spellcheck'
 import { t } from '../../i18n'
@@ -47,6 +48,7 @@ type ContextMenuEvent = {
 interface ParagraphContextState {
   showOrderedList: boolean
   showBulletList: boolean
+  showTaskList: boolean
 }
 
 const COPY_RELATED_MENU_IDS = new Set([
@@ -63,16 +65,19 @@ const getParagraphContextState = (): ParagraphContextState => {
   if (!appMenu) {
     return {
       showOrderedList: false,
-      showBulletList: false
+      showBulletList: false,
+      showTaskList: false
     }
   }
 
   const orderedListMenuItem = appMenu.getMenuItemById('orderListMenuItem')
   const bulletListMenuItem = appMenu.getMenuItemById('bulletListMenuItem')
+  const taskListMenuItem = appMenu.getMenuItemById('taskListMenuItem')
 
   return {
     showOrderedList: !!orderedListMenuItem?.enabled,
-    showBulletList: !!bulletListMenuItem?.enabled
+    showBulletList: !!bulletListMenuItem?.enabled,
+    showTaskList: !!taskListMenuItem?.enabled
   }
 }
 
@@ -82,10 +87,11 @@ const getContextItems = (selectionText: string): MenuItemConstructorOptions[] =>
   const shouldShowParagraphListActions = hasSelectedText(selectionText)
 
   if (shouldShowParagraphListActions) {
-    const { showOrderedList, showBulletList } = getParagraphContextState()
+    const { showOrderedList, showBulletList, showTaskList } = getParagraphContextState()
     const paragraphItems: MenuItemConstructorOptions[] = []
     if (showOrderedList) paragraphItems.push(getOrderedList())
     if (showBulletList) paragraphItems.push(getBulletList())
+    if (showTaskList) paragraphItems.push(getTaskList())
 
     if (paragraphItems.length > 0) {
       items.push(SEPARATOR, ...paragraphItems)

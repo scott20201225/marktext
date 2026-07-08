@@ -49,6 +49,12 @@ const transformEditorElement = (win: Win, type: string): void => {
   }
 }
 
+const insertParagraph = (win: Win, direction: 'before' | 'after'): void => {
+  if (win && win.webContents) {
+    win.webContents.send('mt::cm-insert-paragraph', direction)
+  }
+}
+
 export const bulletList = (win: Win): void => {
   transformEditorElement(win, 'ul-bullet')
 }
@@ -111,6 +117,14 @@ export const orderedList = (win: Win): void => {
 
 export const paragraph = (win: Win): void => {
   transformEditorElement(win, 'paragraph')
+}
+
+export const insertParagraphBefore = (win: Win): void => {
+  insertParagraph(win, 'before')
+}
+
+export const insertParagraphAfter = (win: Win): void => {
+  insertParagraph(win, 'after')
 }
 
 export const quoteBlock = (win: Win): void => {

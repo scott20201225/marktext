@@ -16,15 +16,15 @@ function position(source, ele) {
 
 class Tooltip {
     private _muya: Muya;
-    private _cache: WeakMap<HTMLElement, HTMLElement>;
+    private _cache: Map<HTMLElement, HTMLElement>;
 
     constructor(muya) {
         this._muya = muya;
-        this._cache = new WeakMap();
-        const { domNode, eventCenter } = this._muya;
+        this._cache = new Map();
+        const { eventCenter } = this._muya;
 
         eventCenter.attachDOMEvent(
-            domNode,
+            document,
             'mouseover',
             this._mouseOver.bind(this),
         );
@@ -32,10 +32,12 @@ class Tooltip {
 
     private _mouseOver(event) {
         const { target } = event;
-        const toolTipTarget = target.closest('[data-tooltip]');
+        const toolTipTarget = target instanceof Element ? target.closest('[data-tooltip]') : null;
         const { eventCenter } = this._muya;
         if (toolTipTarget && !this._cache.has(toolTipTarget)) {
             const tooltip = toolTipTarget.getAttribute('data-tooltip');
+            if (!tooltip)
+                return;
             const tooltipEle = document.createElement('div');
             tooltipEle.textContent = tooltip;
             tooltipEle.classList.add('mu-tooltip');
@@ -70,6 +72,13 @@ class Tooltip {
             tooltipEle.remove();
             this._cache.delete(target);
         }
+    }
+
+    destroy() {
+        for (const tooltip of this._cache.values())
+            tooltip.remove();
+
+        this._cache.clear();
     }
 }
 

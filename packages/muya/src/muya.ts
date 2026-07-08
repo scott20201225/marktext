@@ -31,6 +31,7 @@ import {
 } from './selection/offsetCursor';
 import { isAnyListState, isAtxHeadingState, isCodeBlockState } from './state/types';
 import { isAdmonitionType } from './state/admonition';
+import Tooltip from './ui/tooltip';
 import { Ui } from './ui/ui';
 import { deepClone } from './utils';
 import { encodeImageSrc } from './utils/image';
@@ -155,6 +156,7 @@ export class Muya {
     public editor: Editor;
     public ui: Ui;
     public i18n: I18n;
+    public tooltip: Tooltip;
 
     private _uiPlugins: Record<string, unknown> = {};
 
@@ -166,6 +168,7 @@ export class Muya {
         this.editor = new Editor(this);
         this.ui = new Ui(this);
         this.i18n = new I18n(this, this.options.locale);
+        this.tooltip = new Tooltip(this);
         this._bindFocusBlurEvents();
     }
 
@@ -1781,6 +1784,8 @@ export class Muya {
             if (typeof destroy === 'function')
                 (destroy as () => void).call(plugin);
         }
+
+        this.tooltip.destroy();
     }
 }
 

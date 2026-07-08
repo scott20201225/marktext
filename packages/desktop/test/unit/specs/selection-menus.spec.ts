@@ -25,7 +25,9 @@ const PARAGRAPH_MENU_IDS = [
   'looseListItemMenuItem',
   'paragraphMenuItem',
   'horizontalLineMenuItem',
-  'frontMatterMenuItem'
+  'frontMatterMenuItem',
+  'insertParagraphBeforeMenuItem',
+  'insertParagraphAfterMenuItem'
 ]
 
 // Real format submenu ids (see src/main/menu/templates/format.ts).

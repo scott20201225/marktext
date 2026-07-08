@@ -23,8 +23,12 @@ import { canTurnIntoMenu, FRONT_MENU } from './config';
 import './index.css';
 
 function renderIcon({ label, icon }: { label: string; icon: string }) {
+    const iconSelector = label === 'diagram sequence'
+        ? `i.icon.sequence-badged`
+        : 'i.icon';
+
     return h(
-        'i.icon',
+        iconSelector,
         h(
             `i.icon-${label.replace(/\s/g, '-')}`,
             {
@@ -36,6 +40,10 @@ function renderIcon({ label, icon }: { label: string; icon: string }) {
             '',
         ),
     );
+}
+
+function buildTooltip(title: string, shortCut?: string) {
+    return shortCut ? `${title}\n${shortCut}` : title;
 }
 
 const defaultOptions = {
@@ -97,15 +105,11 @@ export class ParagraphFrontMenu extends BaseFloat {
         const { _block: block } = this;
         const { i18n } = this.muya;
         const children = subMenu.map((menuItem) => {
-            const { title, label, subTitle } = menuItem;
+            const { title, label } = menuItem;
+            const tooltip = buildTooltip(i18n.t(title), menuItem.shortCut);
             const iconWrapperSelector = 'div.icon-wrapper';
             const iconWrapper = h(
                 iconWrapperSelector,
-                {
-                    props: {
-                        title: `${i18n.t(title)}\n${subTitle}`,
-                    },
-                },
                 renderIcon(menuItem),
             );
 
@@ -125,6 +129,9 @@ export class ParagraphFrontMenu extends BaseFloat {
             return h(
                 itemSelector,
                 {
+                    attrs: {
+                        'data-tooltip': tooltip,
+                    },
                     on: {
                         click: (event) => {
                             this.selectItem(event, { label });

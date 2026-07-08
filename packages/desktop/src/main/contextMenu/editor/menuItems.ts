@@ -96,6 +96,18 @@ export const getBulletList = (): MenuItemConstructorOptions => ({
   }
 })
 
+export const getTaskList = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.taskList'),
+  id: 'contextTaskListMenuItem',
+  click(_menuItem, targetWindow) {
+    if (targetWindow) {
+      ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+        type: 'ul-task'
+      })
+    }
+  }
+})
+
 // Retained for backward compatibility
 export const CUT = getCUT()
 export const COPY = getCOPY()
@@ -107,6 +119,7 @@ export const INSERT_BEFORE = getInsertBefore()
 export const INSERT_AFTER = getInsertAfter()
 export const ORDERED_LIST = getOrderedList()
 export const BULLET_LIST = getBulletList()
+export const TASK_LIST = getTaskList()
 
 export const SEPARATOR: MenuItemConstructorOptions = {
   type: 'separator'

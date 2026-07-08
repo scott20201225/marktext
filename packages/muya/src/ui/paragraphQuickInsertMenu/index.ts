@@ -119,10 +119,13 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
 
             for (const item of section.children) {
                 const { title, subTitle, label, icon, shortCut } = item;
+                const iconSelector = label === 'diagram sequence'
+                    ? 'i.icon.sequence-badged'
+                    : 'i.icon';
                 const iconVnode = h(
                     'div.icon-container',
                     h(
-                        'i.icon',
+                        iconSelector,
                         h(
                             `i.icon-${label.replace(/\s/g, '-')}`,
                             {

@@ -71,6 +71,26 @@
     filter: drop-shadow(18px 0 currentcolor);
 }
 
+.mu-front-menu li .icon-wrapper i.icon.sequence-badged::after {
+    position: absolute;
+    right: -2px;
+    bottom: -1px;
+
+    display: block;
+    width: 10px;
+    height: 10px;
+
+    background-color: #0f766e;
+    background-image: url('../../assets/icons/sequence/badge.svg');
+    background-position: center;
+    background-repeat: no-repeat;
+    background-size: 7px 7px;
+    border: 1px solid var(--float-bg-color);
+    border-radius: 999px;
+
+    content: '';
+}
+
 .mu-front-menu > ul li.item > span {
     display: inline-block;
     flex: 1;

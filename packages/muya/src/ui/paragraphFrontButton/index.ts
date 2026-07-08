@@ -1,5 +1,6 @@
 import type { VNode } from 'snabbdom';
 import type Parent from '../../block/base/parent';
+import type DiagramBlock from '../../block/extra/diagram';
 import type { Muya } from '../../index';
 import type { IBaseOptions } from '../types';
 import { autoUpdate, computePosition, flip, offset } from '@floating-ui/dom';
@@ -28,9 +29,13 @@ function defaultOptions() {
     };
 }
 
-function renderIcon(i: string, className: string) {
+function renderIcon(i: string, className: string, badgeType?: 'sequence') {
+    const iconSelector = badgeType === 'sequence'
+        ? `i.icon${className ? `.${className}` : ''}.sequence-badged`
+        : `i.icon${className ? `.${className}` : ''}`;
+
     return h(
-        `i.icon${className ? `.${className}` : ''}`,
+        iconSelector,
         h(
             'i.icon-inner',
             {
@@ -341,7 +346,10 @@ export class ParagraphFrontButton {
 
         const iconWrapperSelector = 'div.mu-icon-wrapper';
         const i = getIcon(block!);
-        const iconParagraph = renderIcon(i, 'paragraph');
+        const sequenceBadge = block?.blockName === 'diagram' && (block as DiagramBlock).meta.type === 'sequence'
+            ? 'sequence'
+            : undefined;
+        const iconParagraph = renderIcon(i, 'paragraph', sequenceBadge);
         const iconDrag = renderIcon(dragIcon, 'drag');
 
         const vnode = h(iconWrapperSelector, [iconParagraph, iconDrag]);
