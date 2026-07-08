@@ -1,5 +1,7 @@
 name: Release MarkText
 
+# Touch commit to force GitHub Actions to rescan workflows on the fork.
+
 on:
   push:
     # Broad trigger so the validate job can reject malformed v-tags

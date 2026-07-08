@@ -1,5 +1,7 @@
 name: PR Build
 
+# Touch commit to force GitHub Actions to rescan workflows on the fork.
+
 on:
   pull_request:
     types: [opened, synchronize, reopened]
