@@ -154,6 +154,14 @@ class Preference extends TypedEmitter<PreferenceEvents> {
     return this.store.store as IUserPreferences
   }
 
+  getRendererPreferences(): IUserPreferences {
+    const preferences = { ...this.getAll() }
+    if (isWindows) {
+      preferences.titleBarStyle = 'native'
+    }
+    return preferences
+  }
+
   setItem(key: string, value: unknown): void {
     if (key === 'language') {
       value = this._normalizeLanguage(value)
@@ -209,7 +217,7 @@ class Preference extends TypedEmitter<PreferenceEvents> {
     ipcMain.on('mt::ask-for-user-preference', (e) => {
       const win = BrowserWindow.fromWebContents(e.sender)
       if (win) {
-        win.webContents.send('mt::user-preference', this.getAll())
+        win.webContents.send('mt::user-preference', this.getRendererPreferences())
       }
     })
     ipcMain.on('mt::set-user-preference', (_e, settings: Record<string, unknown>) => {

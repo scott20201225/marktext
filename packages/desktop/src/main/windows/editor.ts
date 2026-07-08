@@ -7,7 +7,7 @@ import { isChildOfDirectory, isSamePathSync } from 'common/filesystem/paths'
 import BaseWindow, { WindowLifecycle, WindowType } from './base'
 import type Accessor from '../app/accessor'
 import { ensureWindowPosition, zoomIn, zoomOut } from './utils'
-import { TITLE_BAR_HEIGHT, editorWinOptions, isLinux, isOsx } from '../config'
+import { TITLE_BAR_HEIGHT, editorWinOptions, isLinux, isOsx, isWindows } from '../config'
 import { showEditorContextMenu } from '../contextMenu/editor'
 import { loadMarkdownFile } from '../filesystem/markdown'
 import { switchLanguage } from '../spellchecker'
@@ -123,7 +123,7 @@ class EditorWindow extends BaseWindow {
     // Enable native or custom/frameless window and titlebar
     if (!isOsx) {
       winOptions.titleBarStyle = 'default'
-      if (titleBarStyle === 'native') {
+      if (isWindows || titleBarStyle === 'native') {
         winOptions.frame = true
       }
     }

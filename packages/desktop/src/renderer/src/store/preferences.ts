@@ -2,6 +2,7 @@ import { defineStore } from 'pinia'
 import { DEFAULT_LANGUAGE } from '@shared/i18n'
 import bus from '../bus'
 import { setLanguage } from '../i18n'
+import { isWindows } from '../util'
 
 // Finite-value unions where the runtime currently constrains the field.
 // We keep these as plain strings everywhere else to avoid forcing prematurely
@@ -142,7 +143,7 @@ export const usePreferencesStore = defineStore('preferences', {
   state: (): PreferencesState => ({
     autoSave: false,
     autoSaveDelay: 5000,
-    titleBarStyle: 'custom',
+    titleBarStyle: isWindows ? 'native' : 'custom',
     openFilesInNewWindow: false,
     openFolderInNewWindow: false,
     zoom: 1.0,

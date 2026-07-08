@@ -3,6 +3,7 @@ import type { BrowserWindow } from 'electron'
 import { TypedEmitter } from '@shared/types/typedEmitter'
 import type Accessor from '../app/accessor'
 import { getThemeBackgroundColor } from '../../common/theme'
+import { isWindows } from '../config'
 
 /**
  * A MarkText window.
@@ -59,6 +60,9 @@ export interface EnvLike {
   debug: boolean
   paths: { userDataPath: string }
 }
+
+const getEffectiveTitleBarStyle = (titleBarStyle?: string): string =>
+  isWindows ? 'native' : (titleBarStyle ?? '')
 
 class BaseWindow extends TypedEmitter<BaseWindowEvents> {
   protected _accessor: Accessor
@@ -134,7 +138,7 @@ class BaseWindow extends TypedEmitter<BaseWindowEvents> {
     url.searchParams.set('cfs', String(codeFontSize))
     url.searchParams.set('hsb', hideScrollbar ? '1' : '0')
     url.searchParams.set('theme', theme ?? '')
-    url.searchParams.set('tbs', titleBarStyle ?? '')
+    url.searchParams.set('tbs', getEffectiveTitleBarStyle(titleBarStyle))
 
     return url
   }
