@@ -130,7 +130,7 @@ dmg:
       y: 240
       type: 'file'
 linux:
-  artifactName: 'marktext-linux-${version}.${ext}'
+  artifactName: 'marktext-linux-${arch}-${version}.${ext}'
   executableName: 'marktext'
   description: 'A simple and elegant open-source markdown editor that focused on speed and usability.'
   maintainer: 'MarkText Contributors'

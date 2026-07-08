@@ -6,6 +6,12 @@ on:
     # (e.g. `vbad.tag`) instead of them silently not triggering anything.
     tags:
       - 'v*'
+  workflow_dispatch:
+    inputs:
+      release_tag:
+        description: Existing semver tag to package and publish (for example v0.20.0-beta.1)
+        required: true
+        type: string
 
 concurrency:
   group: release-${{ github.ref }}
@@ -15,13 +21,37 @@ permissions:
   contents: read
 
 jobs:
+  resolve:
+    name: Resolve release ref
+    runs-on: ubuntu-latest
+    outputs:
+      release_tag: ${{ steps.resolve.outputs.release_tag }}
+      checkout_ref: ${{ steps.resolve.outputs.checkout_ref }}
+    steps:
+      - name: Resolve tag and checkout ref
+        id: resolve
+        env:
+          INPUT_RELEASE_TAG: ${{ inputs.release_tag }}
+        run: |
+          if [[ "${GITHUB_EVENT_NAME}" == "workflow_dispatch" ]]; then
+            tag="${INPUT_RELEASE_TAG}"
+          else
+            tag="${GITHUB_REF_NAME}"
+          fi
+
+          echo "release_tag=${tag}" >> "${GITHUB_OUTPUT}"
+          echo "checkout_ref=${tag}" >> "${GITHUB_OUTPUT}"
+
   validate:
     name: Validate tag
+    needs: resolve
     runs-on: ubuntu-latest
     steps:
       - name: Validate semver tag
+        env:
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
         run: |
-          tag="${GITHUB_REF_NAME}"
+          tag="${RELEASE_TAG}"
           # SemVer 2.0.0 with leading "v"
           if ! [[ "$tag" =~ ^v(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z.-]+)?(\+[0-9A-Za-z.-]+)?$ ]]; then
             echo "::error::Tag '$tag' is not a valid semver (expected vX.Y.Z[-prerelease][+build])"
@@ -31,16 +61,23 @@ jobs:
 
   build:
     name: Build (${{ matrix.name }})
-    needs: validate
+    needs:
+      - resolve
+      - validate
     runs-on: ${{ matrix.os }}
 
     strategy:
       fail-fast: false
       matrix:
         include:
-          - name: linux
-            os: ubuntu-22.04
+          - name: linux-x64
+            os: ubuntu-24.04
             platform: linux
+            arch: x64
+          - name: linux-arm64
+            os: ubuntu-24.04-arm
+            platform: linux
+            arch: arm64
           - name: windows-x64
             os: windows-latest
             platform: windows
@@ -61,6 +98,8 @@ jobs:
     steps:
       - name: Check out Git repository
         uses: actions/checkout@v4.3.1
+        with:
+          ref: ${{ needs.resolve.outputs.checkout_ref }}
 
       - name: Enable Git long paths on Windows
         if: matrix.platform == 'windows'
@@ -110,7 +149,7 @@ jobs:
 
       - name: build-linux
         if: matrix.platform == 'linux'
-        run: pnpm run build:linux
+        run: pnpm run build:linux:${{ matrix.arch }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -151,7 +190,9 @@ jobs:
 
   release:
     name: Publish GitHub Release
-    needs: build
+    needs:
+      - resolve
+      - build
     runs-on: ubuntu-latest
     # Per-job permissions REPLACE workflow-level ones, so re-declare
     # both: contents:write to publish the release, actions:read for
@@ -182,7 +223,8 @@ jobs:
 
       - name: Compose release notes body
         env:
-          IS_PRERELEASE: ${{ contains(github.ref_name, '-') }}
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
+          IS_PRERELEASE: ${{ contains(needs.resolve.outputs.release_tag, '-') }}
         run: |
           {
             if [[ "$IS_PRERELEASE" == "true" ]]; then
@@ -211,9 +253,10 @@ jobs:
         uses: softprops/action-gh-release@v2.6.2
         with:
           draft: true
-          prerelease: ${{ contains(github.ref_name, '-') }}
+          prerelease: ${{ contains(needs.resolve.outputs.release_tag, '-') }}
           generate_release_notes: true
-          name: ${{ github.ref_name }}
+          tag_name: ${{ needs.resolve.outputs.release_tag }}
+          name: ${{ needs.resolve.outputs.release_tag }}
           body_path: release_body.md
           fail_on_unmatched_files: true
           files: dist/*
@@ -221,6 +264,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Promote draft to published release
-        run: gh release edit "${GITHUB_REF_NAME}" --draft=false --repo "${GITHUB_REPOSITORY}"
         env:
+          RELEASE_TAG: ${{ needs.resolve.outputs.release_tag }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: gh release edit "${RELEASE_TAG}" --draft=false --repo "${GITHUB_REPOSITORY}"
