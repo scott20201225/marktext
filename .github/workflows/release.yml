@@ -234,12 +234,8 @@ jobs:
               echo "- May contain bugs and unfinished features."
               echo ""
             fi
-            echo "## ⚠️ Note for macOS users"
-            echo "Builds are unsigned (no Apple Developer ID). After dragging MarkText into Applications, clear the quarantine flag once:"
-            echo '```'
-            echo 'xattr -cr /Applications/marktext.app'
-            echo '```'
-            echo ""
+            cat .github/release-notes/macos-unsigned-zh-CN.md
+            echo
             echo "## Verifying downloads"
             echo "All artifacts are listed with their SHA-256 in \`SHA256SUMS.txt\`. Verify with:"
             echo '```'
