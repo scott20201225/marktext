@@ -4,6 +4,9 @@ export const zhCN = {
     // tableTools
         'Insert Row Above': '上面插入行',
         'Insert Row Below': '下面插入行',
+        'Append Row': '追加到行尾',
+        'Move Row Up': '上移当前行',
+        'Move Row Down': '下移当前行',
         'Remove Row': '删除所在行',
         // tableColumnTools
         'Align Left': '左对齐',
@@ -11,7 +14,13 @@ export const zhCN = {
         'Align Right': '右对齐',
         'Insert Column left': '在左边插入列',
         'Insert Column right': '在右边插入列',
+        'Append Column': '追加到列尾',
+        'Move Column Left': '左移当前列',
+        'Move Column Right': '右移当前列',
         'Remove Column': '删除所在列',
+        'Delete Table': '删除表格',
+        'Row Actions': '点击打开行操作，拖拽可移动行',
+        'Column Actions': '点击打开列操作，拖拽可移动列',
         // quickInsert
         'Paragraph': '普通段落',
         'Horizontal Line': '水平分割线',

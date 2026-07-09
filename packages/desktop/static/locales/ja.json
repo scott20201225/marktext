@@ -82,7 +82,21 @@
       "taskList": "タスクリスト",
       "looseListItem": "ルーズリストアイテム",
       "horizontalRule": "水平線",
-      "frontMatter": "フロントマター"
+      "frontMatter": "フロントマター",
+      "insertTable": "Insert Table",
+      "insertRowAbove": "Insert Row Above",
+      "insertRowBelow": "Insert Row Below",
+      "appendRow": "Append Row",
+      "moveRowUp": "Move Row Up",
+      "moveRowDown": "Move Row Down",
+      "deleteRow": "Delete Row",
+      "insertColumnLeft": "Insert Column Left",
+      "insertColumnRight": "Insert Column Right",
+      "appendColumn": "Append Column",
+      "moveColumnLeft": "Move Column Left",
+      "moveColumnRight": "Move Column Right",
+      "deleteColumn": "Delete Column",
+      "deleteTable": "Delete Table"
     },
     "window": {
       "title": "ウィンドウ",

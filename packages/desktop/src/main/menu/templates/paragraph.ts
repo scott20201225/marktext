@@ -86,13 +86,121 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
         type: 'separator'
       },
       {
-        id: 'tableMenuItem',
+        id: 'tableSubmenuMenuItem',
         label: t('menu.paragraph.table'),
-        type: 'checkbox',
-        accelerator: keybindings.getAccelerator('paragraph.table') ?? undefined,
-        click(_menuItem, focusedWindow) {
-          actions.table(focusedWindow as BrowserWindow | undefined)
-        }
+        submenu: [
+          {
+            id: 'insertTableMenuItem',
+            label: t('menu.paragraph.insertTable'),
+            accelerator: keybindings.getAccelerator('paragraph.table') ?? undefined,
+            click(_menuItem, focusedWindow) {
+              actions.table(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableRowSeparator',
+            type: 'separator'
+          },
+          {
+            id: 'tableInsertRowAboveMenuItem',
+            label: t('menu.paragraph.insertRowAbove'),
+            click(_menuItem, focusedWindow) {
+              actions.tableInsertRowAbove(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableInsertRowBelowMenuItem',
+            label: t('menu.paragraph.insertRowBelow'),
+            click(_menuItem, focusedWindow) {
+              actions.tableInsertRowBelow(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableAppendRowMenuItem',
+            label: t('menu.paragraph.appendRow'),
+            click(_menuItem, focusedWindow) {
+              actions.tableAppendRow(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableMoveRowUpMenuItem',
+            label: t('menu.paragraph.moveRowUp'),
+            click(_menuItem, focusedWindow) {
+              actions.tableMoveRowUp(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableMoveRowDownMenuItem',
+            label: t('menu.paragraph.moveRowDown'),
+            click(_menuItem, focusedWindow) {
+              actions.tableMoveRowDown(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableDeleteRowMenuItem',
+            label: t('menu.paragraph.deleteRow'),
+            click(_menuItem, focusedWindow) {
+              actions.tableDeleteRow(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableColumnSeparator',
+            type: 'separator'
+          },
+          {
+            id: 'tableInsertColumnLeftMenuItem',
+            label: t('menu.paragraph.insertColumnLeft'),
+            click(_menuItem, focusedWindow) {
+              actions.tableInsertColumnLeft(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableInsertColumnRightMenuItem',
+            label: t('menu.paragraph.insertColumnRight'),
+            click(_menuItem, focusedWindow) {
+              actions.tableInsertColumnRight(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableAppendColumnMenuItem',
+            label: t('menu.paragraph.appendColumn'),
+            click(_menuItem, focusedWindow) {
+              actions.tableAppendColumn(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableMoveColumnLeftMenuItem',
+            label: t('menu.paragraph.moveColumnLeft'),
+            click(_menuItem, focusedWindow) {
+              actions.tableMoveColumnLeft(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableMoveColumnRightMenuItem',
+            label: t('menu.paragraph.moveColumnRight'),
+            click(_menuItem, focusedWindow) {
+              actions.tableMoveColumnRight(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableDeleteColumnMenuItem',
+            label: t('menu.paragraph.deleteColumn'),
+            click(_menuItem, focusedWindow) {
+              actions.tableDeleteColumn(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'tableDeleteSeparator',
+            type: 'separator'
+          },
+          {
+            id: 'tableDeleteMenuItem',
+            label: t('menu.paragraph.deleteTable'),
+            click(_menuItem, focusedWindow) {
+              actions.tableDelete(focusedWindow as BrowserWindow | undefined)
+            }
+          }
+        ]
       },
       {
         id: 'codeFencesMenuItem',

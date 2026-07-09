@@ -96,8 +96,10 @@ import {
   PreviewToolBar,
   TableChessboard,
   TableColumnToolbar,
+  TableDeleteButton,
   TableDragBar,
   TableRowColumMenu,
+  TableRowToolbar,
   wordCount as muyaWordCount,
   en,
   de,
@@ -1419,6 +1421,8 @@ const handleEditParagraph = (type: unknown) => {
     nextTick(() => {
       rowInput.value?.focus()
     })
+  } else if (typeof type === 'string' && type.startsWith('table.')) {
+    editor.value?.tableAction(type)
   } else if (editor.value) {
     editor.value.updateParagraph(type)
     if (typeof type === 'string' && type.startsWith('admonition ')) {
@@ -1746,6 +1750,8 @@ onMounted(() => {
     })
     Muya.use(FootnoteTool)
     Muya.use(TableColumnToolbar)
+    Muya.use(TableDeleteButton)
+    Muya.use(TableRowToolbar)
     Muya.use(TableDragBar)
     Muya.use(TableRowColumMenu)
   }

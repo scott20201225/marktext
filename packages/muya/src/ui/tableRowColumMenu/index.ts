@@ -6,6 +6,7 @@ import type { Muya } from '../../index';
 import type { MenuItem } from './config';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
+import { clearTableHighlight, getColumnHighlightCells, getRowHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
 import { toolList } from './config';
 import './index.css';
 
@@ -24,6 +25,7 @@ interface ITableInfo {
 }
 
 export class TableRowColumMenu extends BaseFloat {
+    private static readonly HIGHLIGHT_OWNER = 'table-row-column-menu';
     static pluginName = 'tableBarTools';
     public override capturesContentKeydown = true;
     private _oldVNode: VNode | null = null;
@@ -50,6 +52,7 @@ export class TableRowColumMenu extends BaseFloat {
                 if (reference) {
                     this._tableInfo = tableInfo;
                     this._block = block;
+                    this._highlightTarget();
                     this.show(reference);
                     this.render();
                 }
@@ -58,6 +61,12 @@ export class TableRowColumMenu extends BaseFloat {
                 }
             },
         );
+        eventCenter.attachDOMEvent(this.container!, 'mouseenter', () => {
+            this._highlightTarget();
+        });
+        eventCenter.attachDOMEvent(this.container!, 'mouseleave', () => {
+            clearTableHighlight(TableRowColumMenu.HIGHLIGHT_OWNER);
+        });
     }
 
     render() {
@@ -74,6 +83,10 @@ export class TableRowColumMenu extends BaseFloat {
                 {
                     dataset: {
                         label: item.action,
+                        tooltip: i18n.t(label),
+                    },
+                    attrs: {
+                        title: i18n.t(label),
                     },
                     on: {
                         click: (event) => {
@@ -108,13 +121,31 @@ export class TableRowColumMenu extends BaseFloat {
             let cursorBlock = null;
 
             if (target === 'row') {
-                const offset = location === 'previous' ? rowCount : rowCount + 1;
+                const offset
+                    = location === 'previous'
+                        ? rowCount
+                        : location === 'end'
+                            ? table.rowCount
+                            : rowCount + 1;
                 cursorBlock = table.insertRow(offset);
             }
             else {
-                const offset = location === 'left' ? columnCount : columnCount + 1;
+                const offset
+                    = location === 'left'
+                        ? columnCount
+                        : location === 'end'
+                            ? table.columnCount
+                            : columnCount + 1;
                 cursorBlock = table.insertColumn(offset);
             }
+
+            if (cursorBlock)
+                cursorBlock.setCursor(0, 0);
+        }
+        else if (action === 'move') {
+            const cursorBlock = target === 'row'
+                ? table.moveRow(rowCount, location as 'up' | 'down', columnCount)
+                : table.moveColumn(columnCount, location as 'left' | 'right', rowCount);
 
             if (cursorBlock)
                 cursorBlock.setCursor(0, 0);
@@ -133,5 +164,25 @@ export class TableRowColumMenu extends BaseFloat {
         }
 
         this.hide();
+    }
+
+    override hide() {
+        clearTableHighlight(TableRowColumMenu.HIGHLIGHT_OWNER);
+        super.hide();
+    }
+
+    private _highlightTarget() {
+        const { _block: block, _tableInfo: tableInfo } = this;
+        if (!block || !tableInfo)
+            return;
+
+        const tableInner = getTableInnerElement(block.table);
+        if (!tableInner)
+            return;
+
+        const nextCells = tableInfo.barType === 'right'
+            ? getRowHighlightCells(tableInner, block.rowOffset)
+            : getColumnHighlightCells(tableInner, block.columnOffset);
+        setTableHighlight(TableRowColumMenu.HIGHLIGHT_OWNER, nextCells);
     }
 }

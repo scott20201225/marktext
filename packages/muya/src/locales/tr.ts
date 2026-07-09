@@ -4,6 +4,9 @@ export const tr = {
     // tableTools
         'Insert Row Above': 'Üste Satır Ekle',
         'Insert Row Below': 'Alta Satır Ekle',
+        'Append Row': 'Append Row',
+        'Move Row Up': 'Move Row Up',
+        'Move Row Down': 'Move Row Down',
         'Remove Row': 'Satırı Kaldır',
         // tableColumnTools
         'Align Left': 'Sola Hizala',
@@ -11,7 +14,13 @@ export const tr = {
         'Align Right': 'Sağa Hizala',
         'Insert Column left': 'Sola Sütun Ekle',
         'Insert Column right': 'Sağa Sütun Ekle',
+        'Append Column': 'Append Column',
+        'Move Column Left': 'Move Column Left',
+        'Move Column Right': 'Move Column Right',
         'Remove Column': 'Sütunu Kaldır',
+        'Delete Table': 'Tabloyu Sil',
+        'Row Actions': 'Click for row actions, drag to move row',
+        'Column Actions': 'Click for column actions, drag to move column',
         // quickInsert
         'Paragraph': 'Paragraf',
         'Horizontal Line': 'Yatay Çizgi',

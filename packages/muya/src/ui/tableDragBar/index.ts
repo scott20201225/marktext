@@ -7,6 +7,7 @@ import { ScrollPage } from '../../block/scrollPage';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import BaseFloat from '../baseFloat';
+import { clearTableHighlight, setTableHighlight } from '../tableHighlight';
 import './index.css';
 
 type BarType = 'bottom' | 'right';
@@ -157,6 +158,7 @@ function applyRightSwitch(
 }
 
 export class TableDragBar extends BaseFloat {
+    private static readonly HIGHLIGHT_OWNER = 'table-drag-bar';
     static pluginName = 'tableDragBar';
     private _block: TableBodyCell | null = null;
     private _mouseTimer: ReturnType<typeof setTimeout> | null = null;
@@ -187,6 +189,8 @@ export class TableDragBar extends BaseFloat {
             const els = [...document.elementsFromPoint(x, y)];
             const aboveEls = [...document.elementsFromPoint(x, y - OFFSET)];
             const leftEls = [...document.elementsFromPoint(x - OFFSET, y)];
+            if (this._isHoveringSelf(els) || this._isInsideHoverBridge(x, y))
+                return;
 
             const hasTableCell = (els: Element[]) =>
                 els.some(
@@ -214,6 +218,7 @@ export class TableDragBar extends BaseFloat {
                 );
                 this._barType = barType;
                 this._block = cellBlock;
+                this._highlightTarget(cellBlock.table, barType, getIndex(barType, cellBlock));
                 this.show(tableCellEl!);
                 this._render(barType);
             }
@@ -225,6 +230,13 @@ export class TableDragBar extends BaseFloat {
         eventCenter.attachDOMEvent(document.body, 'mousemove', handler);
         eventCenter.attachDOMEvent(container!, 'mousedown', this._mousedown);
         eventCenter.attachDOMEvent(container!, 'mouseup', this._mouseup);
+        eventCenter.attachDOMEvent(container!, 'mouseenter', () => {
+            if (this._block && this._barType)
+                this._highlightTarget(this._block.table, this._barType, getIndex(this._barType, this._block));
+        });
+        eventCenter.attachDOMEvent(container!, 'mouseleave', () => {
+            clearTableHighlight(TableDragBar.HIGHLIGHT_OWNER);
+        });
     }
 
     private _mousedown = (event: Event) => {
@@ -245,7 +257,7 @@ export class TableDragBar extends BaseFloat {
         if (this._mouseTimer) {
             clearTimeout(this._mouseTimer);
             this._mouseTimer = null;
-            if (barType === 'right') {
+            if (barType === 'bottom') {
                 eventCenter.emit('muya-table-bar', {
                     reference: {
                         getBoundingClientRect: () => container!.getBoundingClientRect(),
@@ -527,5 +539,48 @@ export class TableDragBar extends BaseFloat {
 
     private _render(barType: BarType) {
         this.container!.dataset.drag = barType;
+        this.container!.dataset.tooltip = this.muya.i18n.t(
+            barType === 'bottom' ? 'Column Actions' : 'Row Actions',
+        );
+    }
+
+    override hide() {
+        clearTableHighlight(TableDragBar.HIGHLIGHT_OWNER);
+        super.hide();
+    }
+
+    private _highlightTarget(table: Table, barType: BarType, index: number) {
+        setTableHighlight(
+            TableDragBar.HIGHLIGHT_OWNER,
+            getDragCells(table, barType, index),
+        );
+    }
+
+    private _isHoveringSelf(elements: Element[]) {
+        const { floatBox, container } = this;
+        if (!floatBox || !container)
+            return false;
+
+        return elements.some(element =>
+            floatBox.contains(element) || container.contains(element),
+        );
+    }
+
+    private _isInsideHoverBridge(x: number, y: number) {
+        const { _block: block, floatBox } = this;
+        if (!this.status || !block || !floatBox)
+            return false;
+
+        const cellRect = block.domNode?.getBoundingClientRect();
+        const floatRect = floatBox.getBoundingClientRect();
+        if (!cellRect || !floatRect.width || !floatRect.height)
+            return false;
+
+        const left = Math.min(cellRect.left, floatRect.left) - 12;
+        const right = Math.max(cellRect.right, floatRect.right) + 12;
+        const top = Math.min(cellRect.top, floatRect.top) - 8;
+        const bottom = Math.max(cellRect.bottom, floatRect.bottom) + 8;
+
+        return x >= left && x <= right && y >= top && y <= bottom;
     }
 }

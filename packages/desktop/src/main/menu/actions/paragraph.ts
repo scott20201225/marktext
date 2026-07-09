@@ -15,6 +15,32 @@ const CROSS_BLOCK_ENABLED_PARAGRAPH: readonly string[] = [
   'taskListMenuItem'
 ]
 
+const TABLE_MENU_PARENT_IDS: readonly string[] = ['tableSubmenuMenuItem']
+
+const TABLE_INSERT_MENU_IDS: readonly string[] = ['insertTableMenuItem']
+
+const TABLE_OPERATION_MENU_IDS: readonly string[] = [
+  'tableInsertRowAboveMenuItem',
+  'tableInsertRowBelowMenuItem',
+  'tableAppendRowMenuItem',
+  'tableMoveRowUpMenuItem',
+  'tableMoveRowDownMenuItem',
+  'tableDeleteRowMenuItem',
+  'tableInsertColumnLeftMenuItem',
+  'tableInsertColumnRightMenuItem',
+  'tableAppendColumnMenuItem',
+  'tableMoveColumnLeftMenuItem',
+  'tableMoveColumnRightMenuItem',
+  'tableDeleteColumnMenuItem',
+  'tableDeleteMenuItem'
+]
+
+const TABLE_SEPARATOR_IDS: readonly string[] = [
+  'tableRowSeparator',
+  'tableColumnSeparator',
+  'tableDeleteSeparator'
+]
+
 const ALERT_MENU_ID_BY_TYPE: Readonly<Record<string, string>> = Object.freeze({
   note: 'noteBlockMenuItem',
   tip: 'tipBlockMenuItem',
@@ -30,7 +56,6 @@ const MENU_ID_MAP: Readonly<Record<string, string>> = Object.freeze({
   heading4MenuItem: 'h4',
   heading5MenuItem: 'h5',
   heading6MenuItem: 'h6',
-  tableMenuItem: 'figure',
   codeFencesMenuItem: 'pre',
   htmlBlockMenuItem: 'html',
   mathBlockMenuItem: 'multiplemath',
@@ -47,6 +72,10 @@ const transformEditorElement = (win: Win, type: string): void => {
   if (win && win.webContents) {
     win.webContents.send('mt::editor-paragraph-action', { type })
   }
+}
+
+const transformTableElement = (win: Win, type: string): void => {
+  transformEditorElement(win, type)
 }
 
 const insertParagraph = (win: Win, direction: 'before' | 'after'): void => {
@@ -159,6 +188,58 @@ export const table = (win: Win): void => {
   transformEditorElement(win, 'table')
 }
 
+export const tableInsertRowAbove = (win: Win): void => {
+  transformTableElement(win, 'table.insert-row-above')
+}
+
+export const tableInsertRowBelow = (win: Win): void => {
+  transformTableElement(win, 'table.insert-row-below')
+}
+
+export const tableAppendRow = (win: Win): void => {
+  transformTableElement(win, 'table.append-row')
+}
+
+export const tableDeleteRow = (win: Win): void => {
+  transformTableElement(win, 'table.delete-row')
+}
+
+export const tableMoveRowUp = (win: Win): void => {
+  transformTableElement(win, 'table.move-row-up')
+}
+
+export const tableMoveRowDown = (win: Win): void => {
+  transformTableElement(win, 'table.move-row-down')
+}
+
+export const tableInsertColumnLeft = (win: Win): void => {
+  transformTableElement(win, 'table.insert-column-left')
+}
+
+export const tableInsertColumnRight = (win: Win): void => {
+  transformTableElement(win, 'table.insert-column-right')
+}
+
+export const tableAppendColumn = (win: Win): void => {
+  transformTableElement(win, 'table.append-column')
+}
+
+export const tableDeleteColumn = (win: Win): void => {
+  transformTableElement(win, 'table.delete-column')
+}
+
+export const tableMoveColumnLeft = (win: Win): void => {
+  transformTableElement(win, 'table.move-column-left')
+}
+
+export const tableMoveColumnRight = (win: Win): void => {
+  transformTableElement(win, 'table.move-column-right')
+}
+
+export const tableDelete = (win: Win): void => {
+  transformTableElement(win, 'table.delete')
+}
+
 export const taskList = (win: Win): void => {
   transformEditorElement(win, 'ul-task')
 }
@@ -225,6 +306,22 @@ const setMultipleStatus = (
   })
 }
 
+const setMultipleVisible = (
+  applicationMenu: Menu,
+  list: readonly string[],
+  visible: boolean
+): void => {
+  visitParagraphMenuItems(applicationMenu, (item) => {
+    if (item.id && list.includes(item.id)) item.visible = visible
+  })
+}
+
+const configureTableMenu = (applicationMenu: Menu, isTable: boolean): void => {
+  setMultipleVisible(applicationMenu, TABLE_INSERT_MENU_IDS, !isTable)
+  setMultipleVisible(applicationMenu, TABLE_OPERATION_MENU_IDS, isTable)
+  setMultipleVisible(applicationMenu, TABLE_SEPARATOR_IDS, isTable)
+}
+
 export interface SelectionState {
   affiliation: Record<string, boolean>
   admonitionType?: string
@@ -240,7 +337,7 @@ export interface SelectionState {
 
 const setCheckedMenuItem = (
   applicationMenu: Menu,
-  { affiliation, admonitionType, isTable, isLooseListItem }: SelectionState
+  { affiliation, admonitionType, isLooseListItem }: SelectionState
 ): void => {
   const activeAlertMenuItemId = admonitionType ? ALERT_MENU_ID_BY_TYPE[admonitionType] : undefined
   visitParagraphMenuItems(applicationMenu, (item) => {
@@ -257,9 +354,7 @@ const setCheckedMenuItem = (
       item.checked = !!isLooseListItem
     } else if (
       Object.keys(affiliation).some((b) => {
-        if (isTable && item.id === 'tableMenuItem') {
-          return true
-        } else if (item.id === 'codeFencesMenuItem' && /code$/.test(b)) {
+        if (item.id === 'codeFencesMenuItem' && /code$/.test(b)) {
           return true
         }
         // Each list kind is its own affiliation key (ol / ul / task), so a
@@ -290,7 +385,8 @@ export const updateSelectionMenus = (
     isDisabled,
     isMultiline,
     isCodeFences,
-    isCodeContent
+    isCodeContent,
+    isTable
   } = state
 
   // Reset format menu.
@@ -302,9 +398,20 @@ export const updateSelectionMenus = (
 
   // Reset paragraph menu.
   setParagraphMenuItemStatus(applicationMenu, !isDisabled)
+  configureTableMenu(applicationMenu, !!isTable)
   if (isDisabled) {
     return
   }
+
+  if (isTable) {
+    setParagraphMenuItemStatus(applicationMenu, false)
+    setMultipleStatus(applicationMenu, [...TABLE_MENU_PARENT_IDS, ...TABLE_OPERATION_MENU_IDS], true)
+    return
+  }
+
+  setMultipleStatus(applicationMenu, TABLE_MENU_PARENT_IDS, true)
+  setMultipleStatus(applicationMenu, TABLE_INSERT_MENU_IDS, true)
+  setMultipleStatus(applicationMenu, TABLE_OPERATION_MENU_IDS, false)
 
   if (isCodeFences) {
     setParagraphMenuItemStatus(applicationMenu, false)

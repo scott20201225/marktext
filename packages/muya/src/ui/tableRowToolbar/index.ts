@@ -1,20 +1,20 @@
 import type { VNode } from 'snabbdom';
-import type CellBlock from '../../block/gfm/table/cell';
+import type TableBodyCell from '../../block/gfm/table/cell';
 import type { Muya } from '../../index';
-import type { TableColumnToolIcon } from './config';
+import type { TableRowToolAction } from './config';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
-import { clearTableHighlight, getColumnHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
-import icons from './config';
+import { clearTableHighlight, getRowHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
+import actions from './config';
 
 import './index.css';
 
 const OFFSET = 27;
 
 const defaultOptions = {
-    placement: 'top' as const,
+    placement: 'left-start' as const,
     offsetOptions: {
         mainAxis: 0,
         crossAxis: 0,
@@ -23,23 +23,23 @@ const defaultOptions = {
     showArrow: false,
 };
 
-export class TableColumnToolbar extends BaseFloat {
-    private static readonly HIGHLIGHT_OWNER = 'table-column-toolbar';
+export class TableRowToolbar extends BaseFloat {
+    private static readonly HIGHLIGHT_OWNER = 'table-row-toolbar';
     private _oldVNode: VNode | null = null;
-    private _block: CellBlock | null = null;
-    private _icons: TableColumnToolIcon[] = icons;
+    private _block: TableBodyCell | null = null;
+    private _actions: TableRowToolAction[] = [...actions];
     private _toolsContainer: HTMLDivElement = document.createElement('div');
 
-    static pluginName = 'tableColumnTools';
+    static pluginName = 'tableRowTools';
     public override capturesContentKeydown = true;
 
     constructor(muya: Muya, options = {}) {
-        const name = 'mu-table-column-tools';
+        const name = 'mu-table-row-tools';
         const opts = Object.assign({}, defaultOptions, options);
         super(muya, name, opts);
         this.options = opts;
         this.container!.appendChild(this._toolsContainer);
-        this.floatBox!.classList.add('mu-table-column-tools-container');
+        this.floatBox!.classList.add('mu-table-row-tools-container');
         this.listen();
     }
 
@@ -53,33 +53,27 @@ export class TableColumnToolbar extends BaseFloat {
 
             const { x, y } = event;
             const eles = [...document.elementsFromPoint(x, y)];
-            const bellowEles = [...document.elementsFromPoint(x, y + OFFSET)];
+            const rightEles = [...document.elementsFromPoint(x + OFFSET, y)];
             if (this._isHoveringSelf(eles) || this._isInsideHoverBridge(x, y))
                 return;
 
-            const hasTableCell = (eles: Element[]) => {
-                return eles.some(
-                    ele =>
-                        ele[BLOCK_DOM_PROPERTY]
-                        && ele[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
+            const hasTableCell = (elements: Element[]) => {
+                return elements.some(
+                    element =>
+                        element[BLOCK_DOM_PROPERTY]
+                        && element[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
                 );
             };
 
-            if (!hasTableCell(eles) && hasTableCell(bellowEles)) {
-                // No need to show table column tools when format tool bar is shown. or the table column tools will show on the top of format toolbar.
-                const { ui } = this.muya;
-                for (const { name, status } of ui.shownFloat) {
-                    if (name === 'mu-format-picker' && status)
-                        return this.hide();
-                }
-                const tableCellEle = bellowEles.find(
-                    ele =>
-                        ele[BLOCK_DOM_PROPERTY]
-                        && ele[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
+            if (!hasTableCell(eles) && hasTableCell(rightEles)) {
+                const tableCellEle = rightEles.find(
+                    element =>
+                        element[BLOCK_DOM_PROPERTY]
+                        && element[BLOCK_DOM_PROPERTY].blockName === 'table.cell',
                 );
-                const cellBlock = tableCellEle![BLOCK_DOM_PROPERTY];
-                this._block = cellBlock as CellBlock;
-                this._highlightCurrentColumn(this._block);
+                const cellBlock = tableCellEle![BLOCK_DOM_PROPERTY] as TableBodyCell;
+                this._block = cellBlock;
+                this._highlightCurrentRow(cellBlock);
                 this.show(tableCellEle!);
                 this.render();
             }
@@ -91,51 +85,48 @@ export class TableColumnToolbar extends BaseFloat {
         eventCenter.attachDOMEvent(document.body, 'mousemove', handler);
         eventCenter.attachDOMEvent(this.container!, 'mouseenter', () => {
             if (this._block)
-                this._highlightCurrentColumn(this._block);
+                this._highlightCurrentRow(this._block);
         });
         eventCenter.attachDOMEvent(this.container!, 'mouseleave', () => {
-            clearTableHighlight(TableColumnToolbar.HIGHLIGHT_OWNER);
+            clearTableHighlight(TableRowToolbar.HIGHLIGHT_OWNER);
         });
     }
 
     render() {
-        const { _icons: icons, _oldVNode: oldVNode, _toolsContainer: toolsContainer, _block: block } = this;
+        const { _actions: actionList, _oldVNode: oldVNode, _toolsContainer: toolsContainer } = this;
         const { i18n } = this.muya;
-        const children = icons.map((i) => {
-            const iconWrapperSelector = 'div.icon-wrapper';
+        const children = actionList.map((action) => {
             const icon = h(
                 'i.icon',
                 h(
                     'i.icon-inner',
                     {
                         style: {
-                            'background': `url(${i.icon}) no-repeat`,
+                            background: `url(${action.icon}) no-repeat`,
                             'background-size': '100%',
                         },
                     },
                     '',
                 ),
             );
-            const iconWrapper = h(iconWrapperSelector, icon);
+            const iconWrapper = h('div.icon-wrapper', icon);
 
             return h(
                 'li.item',
                 {
                     class: {
-                        active: block?.align === i.type,
-                        'with-divider': !!i.dividerBefore,
-                        delete: i.type === 'remove',
+                        delete: action.type === 'remove-row',
                     },
                     dataset: {
-                        action: i.type,
-                        tooltip: i18n.t(i.tooltip),
+                        action: action.type,
+                        tooltip: i18n.t(action.tooltip),
                     },
                     attrs: {
-                        title: `${i18n.t(i.tooltip)}`,
+                        title: i18n.t(action.tooltip),
                     },
                     on: {
                         click: (event) => {
-                            this.selectItem(event, i);
+                            this.selectItem(event, action);
                         },
                     },
                 },
@@ -153,78 +144,61 @@ export class TableColumnToolbar extends BaseFloat {
         this._oldVNode = vnode;
     }
 
-    selectItem(event: Event, item: TableColumnToolIcon) {
+    selectItem(event: Event, action: TableRowToolAction) {
         event.preventDefault();
         event.stopPropagation();
 
-        const { _block: block } = this;
-        // Block is not null, just in case
-        if (!block || !block.parent)
+        const block = this._block;
+        if (!block)
             return;
 
-        const offset = block.parent.offset(block);
         const { table, row } = block;
         const rowCount = block.rowOffset;
-        const columnCount = row.offset(this._block!);
+        const columnCount = row.offset(block);
         let cursorBlock = null;
 
-        switch (item.type) {
-            case 'remove': {
-                // removeColumn returns a content block to re-anchor the caret
-                // on (inside the table
-                // if columns remain, outside the table if the whole table was
-                // removed). Without this setCursor the caret stays in the
-                // detached cell.
-                cursorBlock = block.table.removeColumn(offset);
+        switch (action.type) {
+            case 'insert-row-above':
+                cursorBlock = table.insertRow(rowCount);
                 break;
-            }
-
-            case 'insert left':
-                // fall through
-            case 'insert right': {
-                const offset
-                    = item.type === 'insert left' ? columnCount : columnCount + 1;
-                cursorBlock = table.insertColumn(offset);
+            case 'insert-row-below':
+                cursorBlock = table.insertRow(rowCount + 1);
                 break;
-            }
-
-            case 'append':
-                cursorBlock = table.insertColumn(table.columnCount);
+            case 'append-row':
+                cursorBlock = table.insertRow(table.rowCount);
                 break;
-
-            case 'move left':
-                cursorBlock = table.moveColumn(columnCount, 'left', rowCount);
+            case 'move-row-up':
+                cursorBlock = table.moveRow(rowCount, 'up', columnCount);
                 break;
-
-            case 'move right':
-                cursorBlock = table.moveColumn(columnCount, 'right', rowCount);
+            case 'move-row-down':
+                cursorBlock = table.moveRow(rowCount, 'down', columnCount);
                 break;
-
+            case 'remove-row':
+                cursorBlock = table.removeRow(rowCount);
+                break;
             default:
-                block.table.alignColumn(offset, item.type);
-                this._highlightCurrentColumn(block);
-                return this.render();
+                return;
         }
 
         if (cursorBlock)
             cursorBlock.setCursor(0, 0);
 
-        return this.hide();
+        this.hide();
     }
 
     override hide() {
-        clearTableHighlight(TableColumnToolbar.HIGHLIGHT_OWNER);
+        clearTableHighlight(TableRowToolbar.HIGHLIGHT_OWNER);
         super.hide();
     }
 
-    private _highlightCurrentColumn(block: CellBlock) {
+    private _highlightCurrentRow(block: TableBodyCell) {
         const tableInner = getTableInnerElement(block.table);
         if (!tableInner)
             return;
 
         setTableHighlight(
-            TableColumnToolbar.HIGHLIGHT_OWNER,
-            getColumnHighlightCells(tableInner, block.columnOffset),
+            TableRowToolbar.HIGHLIGHT_OWNER,
+            getRowHighlightCells(tableInner, block.rowOffset),
         );
     }
 

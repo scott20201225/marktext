@@ -1,4 +1,19 @@
-export const toolList = {
+export interface MenuItem {
+    label: string;
+    action: 'insert' | 'move' | 'remove';
+    location:
+        | 'previous'
+        | 'next'
+        | 'current'
+        | 'left'
+        | 'right'
+        | 'end'
+        | 'up'
+        | 'down';
+    target: 'row' | 'column';
+}
+
+export const toolList: Record<'right' | 'bottom', MenuItem[]> = {
     right: [
         {
             label: 'Insert Row Above',
@@ -10,6 +25,24 @@ export const toolList = {
             label: 'Insert Row Below',
             action: 'insert',
             location: 'next',
+            target: 'row',
+        },
+        {
+            label: 'Append Row',
+            action: 'insert',
+            location: 'end',
+            target: 'row',
+        },
+        {
+            label: 'Move Row Up',
+            action: 'move',
+            location: 'up',
+            target: 'row',
+        },
+        {
+            label: 'Move Row Down',
+            action: 'move',
+            location: 'down',
             target: 'row',
         },
         {
@@ -33,6 +66,24 @@ export const toolList = {
             target: 'column',
         },
         {
+            label: 'Append Column',
+            action: 'insert',
+            location: 'end',
+            target: 'column',
+        },
+        {
+            label: 'Move Column Left',
+            action: 'move',
+            location: 'left',
+            target: 'column',
+        },
+        {
+            label: 'Move Column Right',
+            action: 'move',
+            location: 'right',
+            target: 'column',
+        },
+        {
             label: 'Remove Column',
             action: 'remove',
             location: 'current',
@@ -40,5 +91,3 @@ export const toolList = {
         },
     ],
 };
-
-export type MenuItem = typeof toolList['right'][number];

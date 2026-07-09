@@ -82,7 +82,21 @@
       "taskList": "작업 목록",
       "looseListItem": "느슨한 목록 항목",
       "horizontalRule": "수평선",
-      "frontMatter": "프론트 매터"
+      "frontMatter": "프론트 매터",
+      "insertTable": "Insert Table",
+      "insertRowAbove": "Insert Row Above",
+      "insertRowBelow": "Insert Row Below",
+      "appendRow": "Append Row",
+      "moveRowUp": "Move Row Up",
+      "moveRowDown": "Move Row Down",
+      "deleteRow": "Delete Row",
+      "insertColumnLeft": "Insert Column Left",
+      "insertColumnRight": "Insert Column Right",
+      "appendColumn": "Append Column",
+      "moveColumnLeft": "Move Column Left",
+      "moveColumnRight": "Move Column Right",
+      "deleteColumn": "Delete Column",
+      "deleteTable": "Delete Table"
     },
     "window": {
       "title": "창",

@@ -4,6 +4,9 @@ export const es = {
     // tableTools
         'Insert Row Above': 'Insertar fila arriba',
         'Insert Row Below': 'Insertar fila abajo',
+        'Append Row': 'Append Row',
+        'Move Row Up': 'Move Row Up',
+        'Move Row Down': 'Move Row Down',
         'Remove Row': 'Eliminar fila',
         // tableColumnTools
         'Align Left': 'Alinear a la izquierda',
@@ -11,7 +14,13 @@ export const es = {
         'Align Right': 'Alinear a la derecha',
         'Insert Column left': 'Insertar columna a la izquierda',
         'Insert Column right': 'Insertar columna a la derecha',
+        'Append Column': 'Append Column',
+        'Move Column Left': 'Move Column Left',
+        'Move Column Right': 'Move Column Right',
         'Remove Column': 'Eliminar columna',
+        'Delete Table': 'Eliminar tabla',
+        'Row Actions': 'Click for row actions, drag to move row',
+        'Column Actions': 'Click for column actions, drag to move column',
         // quickInsert
         'Paragraph': 'Párrafo',
         'Horizontal Line': 'Línea horizontal',

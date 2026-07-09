@@ -4,6 +4,9 @@ export const ja = {
     // tableTools
         'Insert Row Above': '上へ行を挿入する',
         'Insert Row Below': '下へ行を挿入する',
+        'Append Row': 'Append Row',
+        'Move Row Up': 'Move Row Up',
+        'Move Row Down': 'Move Row Down',
         'Remove Row': '行を削除する',
         // tableColumnTools
         'Align Left': '左揃え',
@@ -11,7 +14,13 @@ export const ja = {
         'Align Right': '右揃え',
         'Insert Column left': '左側へ列を挿入する',
         'Insert Column right': '右側へ列を挿入する',
+        'Append Column': 'Append Column',
+        'Move Column Left': 'Move Column Left',
+        'Move Column Right': 'Move Column Right',
         'Remove Column': '列を削除する',
+        'Delete Table': '表を削除',
+        'Row Actions': 'Click for row actions, drag to move row',
+        'Column Actions': 'Click for column actions, drag to move column',
         // quickInsert
         'Paragraph': '一般段落',
         'Horizontal Line': '水平分割線',

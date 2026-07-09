@@ -1,5 +1,6 @@
 import type Content from './block/base/content';
 import type Parent from './block/base/parent';
+import type TableBodyCell from './block/gfm/table/cell';
 import type { TBlockPath } from './block/types';
 import type { Listener } from './event/types';
 import type { ILocale } from './i18n/types';
@@ -63,6 +64,12 @@ interface ISelectionSnapshot {
     focus: number;
     anchorPath: (string | number)[];
     focusPath: (string | number)[];
+}
+
+interface ITableActionContext {
+    cell: TableBodyCell;
+    startOffset: number;
+    endOffset: number;
 }
 
 // Maps the paragraph-menu labels the desktop sends through `updateParagraph`
@@ -992,6 +999,99 @@ export class Muya {
             block.parent!.insertAfter(newTable, block);
 
         newTable.firstContentInDescendant()?.setCursor(0, 0, true);
+    }
+
+    private _getTableActionContext(): Nullable<ITableActionContext> {
+        const content = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock;
+        if (content?.blockName !== 'table.cell.content')
+            return null;
+
+        const cell = content.closestBlock('table.cell') as TableBodyCell | null;
+        if (!cell)
+            return null;
+
+        const cursor = content.getCursor?.();
+        const startOffset = cursor ? Math.min(cursor.start.offset, cursor.end.offset) : 0;
+        const endOffset = cursor ? Math.max(cursor.start.offset, cursor.end.offset) : 0;
+
+        return {
+            cell,
+            startOffset,
+            endOffset,
+        };
+    }
+
+    private _focusTableActionResult(
+        cursorBlock: Nullable<Content>,
+        startOffset = 0,
+        endOffset = startOffset,
+    ): void {
+        if (!cursorBlock)
+            return;
+
+        const safeStart = Math.min(startOffset, cursorBlock.text.length);
+        const safeEnd = Math.min(endOffset, cursorBlock.text.length);
+        cursorBlock.setCursor(safeStart, safeEnd, true);
+    }
+
+    tableAction(type: string) {
+        if (type === 'table.delete') {
+            this.deleteParagraph();
+            return;
+        }
+
+        const context = this._getTableActionContext();
+        if (!context)
+            return;
+
+        const { cell, startOffset, endOffset } = context;
+        const { table, rowOffset, columnOffset } = cell;
+        let cursorBlock: Nullable<Content> = null;
+
+        this.editor.selection.table.clear();
+
+        switch (type) {
+            case 'table.insert-row-above':
+                cursorBlock = table.insertRow(rowOffset);
+                break;
+            case 'table.insert-row-below':
+                cursorBlock = table.insertRow(rowOffset + 1);
+                break;
+            case 'table.append-row':
+                cursorBlock = table.insertRow(table.rowCount);
+                break;
+            case 'table.delete-row':
+                cursorBlock = table.removeRow(rowOffset);
+                break;
+            case 'table.insert-column-left':
+                cursorBlock = table.insertColumn(columnOffset);
+                break;
+            case 'table.insert-column-right':
+                cursorBlock = table.insertColumn(columnOffset + 1);
+                break;
+            case 'table.append-column':
+                cursorBlock = table.insertColumn(table.columnCount);
+                break;
+            case 'table.delete-column':
+                cursorBlock = table.removeColumn(columnOffset);
+                break;
+            case 'table.move-row-up':
+                cursorBlock = table.moveRow(rowOffset, 'up', columnOffset);
+                break;
+            case 'table.move-row-down':
+                cursorBlock = table.moveRow(rowOffset, 'down', columnOffset);
+                break;
+            case 'table.move-column-left':
+                cursorBlock = table.moveColumn(columnOffset, 'left', rowOffset);
+                break;
+            case 'table.move-column-right':
+                cursorBlock = table.moveColumn(columnOffset, 'right', rowOffset);
+                break;
+            default:
+                return;
+        }
+
+        this._focusTableActionResult(cursorBlock, startOffset, endOffset);
     }
 
     /**

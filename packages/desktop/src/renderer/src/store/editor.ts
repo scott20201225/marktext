@@ -1954,7 +1954,6 @@ const createApplicationMenuState = ({
     } else if (b.type === 'figure' && b.functionType) {
       if (b.functionType === 'table') {
         state.isTable = true
-        state.isDisabled = true
         state.affiliation[b.type] = true
       } else if (b.functionType === 'diagram') {
         // Diagrams are atomic, non-formattable blocks: disable the whole

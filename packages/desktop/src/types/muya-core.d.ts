@@ -75,8 +75,10 @@ declare module '@muyajs/core' {
   export const PreviewToolBar: any
   export const TableChessboard: any
   export const TableColumnToolbar: any
+  export const TableDeleteButton: any
   export const TableDragBar: any
   export const TableRowColumMenu: any
+  export const TableRowToolbar: any
 
   export class MarkdownToHtml {
     markdown: string

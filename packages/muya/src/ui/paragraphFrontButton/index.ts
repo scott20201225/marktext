@@ -16,6 +16,7 @@ import { getIcon } from './config';
 import './index.css';
 
 const LEFT_OFFSET = 100;
+const TABLE_CORNER_GAP = 2;
 
 function defaultOptions() {
     return {
@@ -389,6 +390,33 @@ export class ParagraphFrontButton {
         eventCenter.emit('muya-float-button', this, false);
     }
 
+    private _getTableCornerReference(block: Parent) {
+        const tableInnerElement = (block.firstChild?.domNode instanceof HTMLTableElement)
+            ? block.firstChild.domNode
+            : block.domNode!;
+
+        return {
+            getBoundingClientRect: () => {
+                const rect = tableInnerElement.getBoundingClientRect();
+                const x = rect.left - TABLE_CORNER_GAP;
+                const y = rect.top - TABLE_CORNER_GAP;
+                return {
+                    x,
+                    y,
+                    left: x,
+                    right: x,
+                    top: y,
+                    bottom: y,
+                    width: 0,
+                    height: 0,
+                    toJSON() {
+                        return this;
+                    },
+                } as DOMRect;
+            },
+        };
+    }
+
     show(block: Parent) {
         if (this._block && this._block === block)
             return;
@@ -409,6 +437,11 @@ export class ParagraphFrontButton {
 
         const isLooseList = isOrderOrBulletList(block) && block.meta.loose;
         const dynamicMainAxis = isLooseList ? paddingTop * 2 : paddingTop;
+        const isTableBlock = block.blockName === 'table';
+        const reference = isTableBlock
+            ? this._getTableCornerReference(block)
+            : domNode!;
+        const placementValue = isTableBlock ? 'top-end' : placement;
 
         // Extract offset values, handling both number and object types
         let crossAxisValue = 0;
@@ -418,14 +451,18 @@ export class ParagraphFrontButton {
             alignmentAxisValue = (offsetOptions as { alignmentAxis?: number | null }).alignmentAxis ?? 0;
         }
 
+        const mainAxisValue = isTableBlock ? 0 : dynamicMainAxis;
+        const tableAwareCrossAxis = isTableBlock ? 0 : crossAxisValue;
+        const alignmentAxis = isTableBlock ? 0 : alignmentAxisValue;
+
         const updatePosition = () => {
-            computePosition(domNode!, floatBox, {
-                placement,
+            computePosition(reference as never, floatBox, {
+                placement: placementValue,
                 middleware: [
                     offset({
-                        mainAxis: dynamicMainAxis,
-                        crossAxis: crossAxisValue,
-                        alignmentAxis: alignmentAxisValue,
+                        mainAxis: mainAxisValue,
+                        crossAxis: tableAwareCrossAxis,
+                        alignmentAxis,
                     }),
                     flip(),
                 ],
@@ -439,7 +476,7 @@ export class ParagraphFrontButton {
         };
 
         updatePosition();
-        this._cleanup = autoUpdate(domNode!, floatBox, updatePosition);
+        this._cleanup = autoUpdate(reference as never, floatBox, updatePosition);
 
         this._status = true;
         eventCenter.emit('muya-float-button', this, true);

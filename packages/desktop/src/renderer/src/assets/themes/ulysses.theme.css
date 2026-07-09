@@ -82,6 +82,8 @@
   --floatFontColor: rgba(101, 101, 101, 0.7);
   --floatBgColor: #ffffff;
   --floatHoverColor: rgba(101, 101, 101, 0.04);
+  --tableTargetHighlightBg: color-mix(in srgb, var(--selectionColor) 78%, var(--editorBgColor) 22%);
+  --tableTargetHighlightBorder: color-mix(in srgb, var(--themeColor) 55%, var(--editorColor30));
   --floatBorderColor: rgba(0, 0, 0, 0.03);
   --maskColor: rgba(232, 232, 232, 0.8);
   --editorAreaWidth: 750px;
@@ -117,6 +119,8 @@
   --button-border-focus: var(--button-border);
   --float-bg-color: var(--floatBgColor);
   --float-hover-color: var(--floatHoverColor);
+  --table-target-highlight-bg: var(--tableTargetHighlightBg);
+  --table-target-highlight-border: var(--tableTargetHighlightBorder);
   --float-border-color: var(--floatBorderColor);
   --float-shadow: rgb(15 15 15 / 3%) 0 0 0 1px, rgb(15 15 15 / 4%) 0 3px 6px, rgb(15 15 15 / 5%) 0 9px 24px;
   --link-color: var(--linkColor);

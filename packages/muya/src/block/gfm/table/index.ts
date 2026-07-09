@@ -182,6 +182,12 @@ class Table extends Parent {
         return firstCellInNewColumn!.firstChild as TableCellContent;
     }
 
+    private _replaceForReorder(nextState: ITableState): Table {
+        const newTable = ScrollPage.loadBlock('table').create(this.muya, nextState) as Table;
+        this.replaceWith(newTable);
+        return newTable;
+    }
+
     removeRow(offset: number): Nullable<Content> {
         const inner = this.firstChild as TableInner;
         const row = inner.find(offset);
@@ -246,6 +252,36 @@ class Table extends Parent {
         });
 
         return (neighbourCell?.firstChild as TableCellContent | undefined) ?? null;
+    }
+
+    moveRow(offset: number, direction: 'up' | 'down', anchorColumn = 0): Nullable<Content> {
+        const targetOffset = direction === 'up' ? offset - 1 : offset + 1;
+        if (offset < 0 || offset >= this.rowCount || targetOffset < 0 || targetOffset >= this.rowCount) {
+            return this.cellAt(offset, anchorColumn)?.firstChild as TableCellContent | null;
+        }
+
+        const tableState = this.getState();
+        const rowState = tableState.children.splice(offset, 1)[0];
+        tableState.children.splice(targetOffset, 0, rowState);
+
+        const newTable = this._replaceForReorder(tableState);
+        return newTable.cellAt(targetOffset, anchorColumn)?.firstChild as TableCellContent | null;
+    }
+
+    moveColumn(offset: number, direction: 'left' | 'right', anchorRow = 0): Nullable<Content> {
+        const targetOffset = direction === 'left' ? offset - 1 : offset + 1;
+        if (offset < 0 || offset >= this.columnCount || targetOffset < 0 || targetOffset >= this.columnCount) {
+            return this.cellAt(anchorRow, offset)?.firstChild as TableCellContent | null;
+        }
+
+        const tableState = this.getState();
+        tableState.children.forEach((row) => {
+            const cellState = row.children.splice(offset, 1)[0];
+            row.children.splice(targetOffset, 0, cellState);
+        });
+
+        const newTable = this._replaceForReorder(tableState);
+        return newTable.cellAt(anchorRow, targetOffset)?.firstChild as TableCellContent | null;
     }
 
     alignColumn(offset: number, value: string) {

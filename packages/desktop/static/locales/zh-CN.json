@@ -82,7 +82,21 @@
       "taskList": "任务列表",
       "looseListItem": "宽松列表项",
       "horizontalRule": "水平分割线",
-      "frontMatter": "前置元数据"
+      "frontMatter": "前置元数据",
+      "insertTable": "插入表格",
+      "insertRowAbove": "上方插入行",
+      "insertRowBelow": "下方插入行",
+      "appendRow": "追加到行尾",
+      "moveRowUp": "上移当前行",
+      "moveRowDown": "下移当前行",
+      "deleteRow": "删除当前行",
+      "insertColumnLeft": "左侧插入列",
+      "insertColumnRight": "右侧插入列",
+      "appendColumn": "追加到列尾",
+      "moveColumnLeft": "左移当前列",
+      "moveColumnRight": "右移当前列",
+      "deleteColumn": "删除当前列",
+      "deleteTable": "删除表格"
     },
     "window": {
       "title": "窗口",

@@ -2,16 +2,25 @@ export const zhTW = {
     name: 'zh-TW',
     resource: {
     // tableTools
-        'Insert Row Above': '在上方插入列',
-        'Insert Row Below': '在下方插入列',
-        'Remove Row': '刪除所在列',
+        'Insert Row Above': '在上方插入行',
+        'Insert Row Below': '在下方插入行',
+        'Append Row': '追加到行尾',
+        'Move Row Up': '上移目前行',
+        'Move Row Down': '下移目前行',
+        'Remove Row': '刪除所在行',
         // tableColumnTools
         'Align Left': '靠左對齊',
         'Align Center': '置中對齊',
         'Align Right': '靠右對齊',
         'Insert Column left': '在左邊插入欄',
         'Insert Column right': '在右邊插入欄',
+        'Append Column': '追加到欄尾',
+        'Move Column Left': '左移目前欄',
+        'Move Column Right': '右移目前欄',
         'Remove Column': '刪除所在欄',
+        'Delete Table': '刪除表格',
+        'Row Actions': '點擊開啟行操作，拖曳可移動行',
+        'Column Actions': '點擊開啟欄操作，拖曳可移動欄',
         // quickInsert
         'Paragraph': '一般段落',
         'Horizontal Line': '水平分隔線',

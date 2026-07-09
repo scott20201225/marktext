@@ -60,6 +60,11 @@
     transition: transform 0.3s ease-in-out;
 }
 
+.mu-table-target-highlight {
+    background: var(--table-target-highlight-bg, var(--selection-color)) !important;
+    box-shadow: inset 0 0 0 1px var(--table-target-highlight-border, var(--theme-color));
+}
+
 .mu-drag-cell {
     z-index: 1;
 
