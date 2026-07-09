@@ -35,13 +35,13 @@ export const withTopLevelMenuMnemonic = (key: TopLevelMenuKey, label: string): s
 
   const mnemonic = WINDOWS_TOP_LEVEL_MNEMONICS[key]
   if (EAST_ASIAN_LABEL_RE.test(label)) {
-    return `${label}(&${mnemonic})`
+    return `${label}(${mnemonic})(&${mnemonic})`
   }
 
   const index = label.toUpperCase().indexOf(mnemonic)
   if (index >= 0) {
-    return `${label.slice(0, index)}&${label[index]}${label.slice(index + 1)}`
+    return `${label.slice(0, index)}&${label[index]}${label.slice(index + 1)}(${mnemonic})`
   }
 
-  return `${label}(&${mnemonic})`
+  return `${label}(${mnemonic})(&${mnemonic})`
 }
