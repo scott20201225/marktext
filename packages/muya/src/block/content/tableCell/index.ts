@@ -264,10 +264,12 @@ class TableCellContent extends Format {
         }
         else if (event.type === 'compositionend' && this._hasZeroWidthSpaceAtBeginning) {
             this._hasZeroWidthSpaceAtBeginning = false;
-            const { text } = this;
-            const offset = text.length - 1;
-            this.text = text.substring(0, offset);
-            this.setCursor(offset, offset, true);
+            const normalizedText = this.text.replace(/\u200B/g, '');
+            if (normalizedText !== this.text) {
+                const offset = normalizedText.length;
+                this.text = normalizedText;
+                this.setCursor(offset, offset, true);
+            }
         }
     }
 }

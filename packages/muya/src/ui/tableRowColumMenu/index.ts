@@ -1,12 +1,12 @@
 import type { VNode } from 'snabbdom';
 import type TableBodyCell from '../../block/gfm/table/cell';
-import type TableInner from '../../block/gfm/table/table';
 
 import type { Muya } from '../../index';
 import type { MenuItem } from './config';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
-import { clearTableHighlight, getColumnHighlightCells, getRowHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
+import { resolveTableCellContext } from '../tableContext';
+import { clearTableHighlight, getColumnHighlightCells, getRowHighlightCells, setTableHighlight } from '../tableHighlight';
 import { toolList } from './config';
 import './index.css';
 
@@ -71,8 +71,10 @@ export class TableRowColumMenu extends BaseFloat {
 
     render() {
         const { _tableInfo: tableInfo, _oldVNode: oldVNode, _tableBarContainer: tableBarContainer } = this;
+        if (!tableInfo)
+            return;
         const { i18n } = this.muya;
-        const renderArray: MenuItem[] = toolList[tableInfo!.barType];
+        const renderArray: MenuItem[] = toolList[tableInfo.barType];
         const children = renderArray.map((item) => {
             const { label } = item;
 
@@ -112,9 +114,13 @@ export class TableRowColumMenu extends BaseFloat {
         event.preventDefault();
         event.stopPropagation();
 
-        const { table, row } = this._block!;
-        const rowCount = (table.firstChild as TableInner).offset(row);
-        const columnCount = row.offset(this._block!);
+        const context = resolveTableCellContext(this._block);
+        if (!context) {
+            this.hide();
+            return;
+        }
+
+        const { table, rowOffset: rowCount, columnOffset: columnCount } = context;
         const { location, action, target } = item;
 
         if (action === 'insert') {
@@ -167,6 +173,8 @@ export class TableRowColumMenu extends BaseFloat {
     }
 
     override hide() {
+        this._block = null;
+        this._tableInfo = null;
         clearTableHighlight(TableRowColumMenu.HIGHLIGHT_OWNER);
         super.hide();
     }
@@ -176,13 +184,13 @@ export class TableRowColumMenu extends BaseFloat {
         if (!block || !tableInfo)
             return;
 
-        const tableInner = getTableInnerElement(block.table);
-        if (!tableInner)
+        const context = resolveTableCellContext(block);
+        if (!context)
             return;
 
         const nextCells = tableInfo.barType === 'right'
-            ? getRowHighlightCells(tableInner, block.rowOffset)
-            : getColumnHighlightCells(tableInner, block.columnOffset);
+            ? getRowHighlightCells(context.tableElement, context.rowOffset)
+            : getColumnHighlightCells(context.tableElement, context.columnOffset);
         setTableHighlight(TableRowColumMenu.HIGHLIGHT_OWNER, nextCells);
     }
 }

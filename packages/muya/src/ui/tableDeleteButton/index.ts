@@ -5,6 +5,7 @@ import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
+import { resolveTableCellContext } from '../tableContext';
 import { clearTableHighlight, getTableInnerElement, getWholeTableHighlightCells, setTableHighlight } from '../tableHighlight';
 
 import './index.css';
@@ -152,10 +153,17 @@ export class TableDeleteButton extends BaseFloat {
 
     private _showAtTableCorner(cellBlock: TableBodyCell) {
         const GAP = 2;
-        const tableInnerElement = cellBlock.table.firstChild?.domNode;
+        const context = resolveTableCellContext(cellBlock);
+        if (!context) {
+            this.hide();
+            return;
+        }
+
+        const { table } = context;
+        const tableInnerElement = table.firstChild?.domNode;
         const tableElement = tableInnerElement instanceof HTMLTableElement
             ? tableInnerElement
-            : cellBlock.table.domNode!;
+            : table.domNode!;
         const pointReference = {
             getBoundingClientRect: () => {
                 const rect = tableElement.getBoundingClientRect();
@@ -184,16 +192,19 @@ export class TableDeleteButton extends BaseFloat {
         event.preventDefault();
         event.stopPropagation();
 
-        const block = this._block;
-        if (!block)
+        const context = resolveTableCellContext(this._block);
+        if (!context) {
+            this.hide();
             return;
+        }
 
-        block.firstContentInDescendant()?.setCursor(0, 0, true);
+        context.block.firstContentInDescendant()?.setCursor(0, 0, true);
         this.muya.tableAction('table.delete');
         this.hide();
     }
 
     override hide() {
+        this._block = null;
         clearTableHighlight(TableDeleteButton.HIGHLIGHT_OWNER);
         super.hide();
     }
@@ -213,9 +224,15 @@ export class TableDeleteButton extends BaseFloat {
         if (!this.status || !block || !floatBox)
             return false;
 
-        const tableRectSource = block.table.firstChild?.domNode instanceof HTMLTableElement
-            ? block.table.firstChild.domNode
-            : block.table.domNode;
+        const context = resolveTableCellContext(block);
+        if (!context) {
+            this._block = null;
+            return false;
+        }
+
+        const tableRectSource = context.table.firstChild?.domNode instanceof HTMLTableElement
+            ? context.table.firstChild.domNode
+            : context.table.domNode;
         const tableRect = tableRectSource?.getBoundingClientRect();
         const floatRect = floatBox.getBoundingClientRect();
         if (!tableRect || !floatRect.width || !floatRect.height)
@@ -230,7 +247,8 @@ export class TableDeleteButton extends BaseFloat {
     }
 
     private _highlightWholeTable() {
-        const tableInner = this._block ? getTableInnerElement(this._block.table) : null;
+        const context = resolveTableCellContext(this._block);
+        const tableInner = context ? getTableInnerElement(context.table) : null;
         if (!tableInner)
             return;
 

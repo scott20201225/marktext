@@ -6,7 +6,8 @@ import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
-import { clearTableHighlight, getRowHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
+import { resolveTableCellContext } from '../tableContext';
+import { clearTableHighlight, getRowHighlightCells, setTableHighlight } from '../tableHighlight';
 import actions from './config';
 
 import './index.css';
@@ -148,13 +149,13 @@ export class TableRowToolbar extends BaseFloat {
         event.preventDefault();
         event.stopPropagation();
 
-        const block = this._block;
-        if (!block)
+        const context = resolveTableCellContext(this._block);
+        if (!context) {
+            this.hide();
             return;
+        }
 
-        const { table, row } = block;
-        const rowCount = block.rowOffset;
-        const columnCount = row.offset(block);
+        const { table, rowOffset: rowCount, columnOffset: columnCount } = context;
         let cursorBlock = null;
 
         switch (action.type) {
@@ -187,18 +188,19 @@ export class TableRowToolbar extends BaseFloat {
     }
 
     override hide() {
+        this._block = null;
         clearTableHighlight(TableRowToolbar.HIGHLIGHT_OWNER);
         super.hide();
     }
 
     private _highlightCurrentRow(block: TableBodyCell) {
-        const tableInner = getTableInnerElement(block.table);
-        if (!tableInner)
+        const context = resolveTableCellContext(block);
+        if (!context)
             return;
 
         setTableHighlight(
             TableRowToolbar.HIGHLIGHT_OWNER,
-            getRowHighlightCells(tableInner, block.rowOffset),
+            getRowHighlightCells(context.tableElement, context.rowOffset),
         );
     }
 
@@ -216,6 +218,10 @@ export class TableRowToolbar extends BaseFloat {
         const { _block: block, floatBox } = this;
         if (!this.status || !block || !floatBox)
             return false;
+        if (!block.domNode?.isConnected) {
+            this._block = null;
+            return false;
+        }
 
         const cellRect = block.domNode?.getBoundingClientRect();
         const floatRect = floatBox.getBoundingClientRect();

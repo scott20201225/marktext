@@ -6,7 +6,8 @@ import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
-import { clearTableHighlight, getColumnHighlightCells, getTableInnerElement, setTableHighlight } from '../tableHighlight';
+import { resolveTableCellContext } from '../tableContext';
+import { clearTableHighlight, getColumnHighlightCells, setTableHighlight } from '../tableHighlight';
 import icons from './config';
 
 import './index.css';
@@ -157,15 +158,14 @@ export class TableColumnToolbar extends BaseFloat {
         event.preventDefault();
         event.stopPropagation();
 
-        const { _block: block } = this;
-        // Block is not null, just in case
-        if (!block || !block.parent)
+        const context = resolveTableCellContext(this._block);
+        if (!context) {
+            this.hide();
             return;
+        }
 
-        const offset = block.parent.offset(block);
-        const { table, row } = block;
-        const rowCount = block.rowOffset;
-        const columnCount = row.offset(this._block!);
+        const { table, rowOffset: rowCount, columnOffset: columnCount, block } = context;
+        const offset = columnCount;
         let cursorBlock = null;
 
         switch (item.type) {
@@ -175,7 +175,7 @@ export class TableColumnToolbar extends BaseFloat {
                 // if columns remain, outside the table if the whole table was
                 // removed). Without this setCursor the caret stays in the
                 // detached cell.
-                cursorBlock = block.table.removeColumn(offset);
+                cursorBlock = table.removeColumn(offset);
                 break;
             }
 
@@ -201,7 +201,7 @@ export class TableColumnToolbar extends BaseFloat {
                 break;
 
             default:
-                block.table.alignColumn(offset, item.type);
+                table.alignColumn(offset, item.type);
                 this._highlightCurrentColumn(block);
                 return this.render();
         }
@@ -213,18 +213,19 @@ export class TableColumnToolbar extends BaseFloat {
     }
 
     override hide() {
+        this._block = null;
         clearTableHighlight(TableColumnToolbar.HIGHLIGHT_OWNER);
         super.hide();
     }
 
     private _highlightCurrentColumn(block: CellBlock) {
-        const tableInner = getTableInnerElement(block.table);
-        if (!tableInner)
+        const context = resolveTableCellContext(block);
+        if (!context)
             return;
 
         setTableHighlight(
             TableColumnToolbar.HIGHLIGHT_OWNER,
-            getColumnHighlightCells(tableInner, block.columnOffset),
+            getColumnHighlightCells(context.tableElement, context.columnOffset),
         );
     }
 
@@ -242,6 +243,10 @@ export class TableColumnToolbar extends BaseFloat {
         const { _block: block, floatBox } = this;
         if (!this.status || !block || !floatBox)
             return false;
+        if (!block.domNode?.isConnected) {
+            this._block = null;
+            return false;
+        }
 
         const cellRect = block.domNode?.getBoundingClientRect();
         const floatRect = floatBox.getBoundingClientRect();

@@ -1,12 +1,12 @@
 import type Table from '../../block/gfm/table';
 import type TableBodyCell from '../../block/gfm/table/cell';
-import type TableInner from '../../block/gfm/table/table';
 import type { Muya } from '../../index';
 
 import { ScrollPage } from '../../block/scrollPage';
 import { BLOCK_DOM_PROPERTY } from '../../config';
 import { isMouseEvent, throttle } from '../../utils';
 import BaseFloat from '../baseFloat';
+import { resolveTableCellContext } from '../tableContext';
 import { clearTableHighlight, setTableHighlight } from '../tableHighlight';
 import './index.css';
 
@@ -26,12 +26,16 @@ interface IDragInfo {
 }
 
 function calculateAspects(tableBlock: Table, barType: BarType) {
-    const table = tableBlock.firstChild!.domNode!;
+    const table = tableBlock.firstChild?.domNode;
+    if (!(table instanceof HTMLTableElement))
+        return [];
 
     if (barType === 'bottom') {
         const firstRow = table.querySelector('tr');
+        if (!firstRow)
+            return [];
 
-        return Array.from(firstRow!.children).map(cell => cell.clientWidth);
+        return Array.from(firstRow.children).map(cell => cell.clientWidth);
     }
     else {
         return Array.from(table.querySelectorAll('tr')).map(
@@ -41,7 +45,9 @@ function calculateAspects(tableBlock: Table, barType: BarType) {
 }
 
 export function getAllTableCells(tableBlock: Table) {
-    const table = tableBlock.firstChild!.domNode!;
+    const table = tableBlock.firstChild?.domNode;
+    if (!(table instanceof HTMLTableElement))
+        return [] as HTMLTableCellElement[][];
     const rows = table.querySelectorAll('tr');
     const cells = [];
 
@@ -52,19 +58,25 @@ export function getAllTableCells(tableBlock: Table) {
 }
 
 export function getIndex(barType: BarType, cellBlock: TableBodyCell) {
-    const { row, table } = cellBlock;
+    const context = resolveTableCellContext(cellBlock);
+    if (!context)
+        return null;
 
     return barType === 'bottom'
-        ? row.offset(cellBlock)
-        : (table.firstChild as TableInner).offset(row);
+        ? context.columnOffset
+        : context.rowOffset;
 }
 
 function getDragCells(tableBlock: Table, barType: BarType, index: number) {
-    const table = tableBlock.firstChild!.domNode!;
+    const table = tableBlock.firstChild?.domNode;
+    if (!(table instanceof HTMLTableElement))
+        return [] as HTMLTableCellElement[];
     const dragCells = [];
 
     if (barType === 'right') {
         const row = [...table.querySelectorAll('tr')][index];
+        if (!row)
+            return [] as HTMLTableCellElement[];
         dragCells.push(...row.children);
     }
     else {
@@ -218,7 +230,11 @@ export class TableDragBar extends BaseFloat {
                 );
                 this._barType = barType;
                 this._block = cellBlock;
-                this._highlightTarget(cellBlock.table, barType, getIndex(barType, cellBlock));
+                const context = resolveTableCellContext(cellBlock);
+                const index = getIndex(barType, cellBlock);
+                if (!context || index === null)
+                    return this.hide();
+                this._highlightTarget(context.table, barType, index);
                 this.show(tableCellEl!);
                 this._render(barType);
             }
@@ -231,8 +247,13 @@ export class TableDragBar extends BaseFloat {
         eventCenter.attachDOMEvent(container!, 'mousedown', this._mousedown);
         eventCenter.attachDOMEvent(container!, 'mouseup', this._mouseup);
         eventCenter.attachDOMEvent(container!, 'mouseenter', () => {
-            if (this._block && this._barType)
-                this._highlightTarget(this._block.table, this._barType, getIndex(this._barType, this._block));
+            if (this._block && this._barType) {
+                const context = resolveTableCellContext(this._block);
+                const index = getIndex(this._barType, this._block);
+                if (!context || index === null)
+                    return this.hide();
+                this._highlightTarget(context.table, this._barType, index);
+            }
         });
         eventCenter.attachDOMEvent(container!, 'mouseleave', () => {
             clearTableHighlight(TableDragBar.HIGHLIGHT_OWNER);
@@ -276,12 +297,18 @@ export class TableDragBar extends BaseFloat {
         if (!isMouseEvent(event) || !this._block || !this._barType)
             return;
 
-        const { table } = this._block;
+        const context = resolveTableCellContext(this._block);
+        const index = getIndex(this._barType, this._block);
+        if (!context || index === null)
+            return this.hide();
+
+        const { table } = context;
         const { eventCenter } = this.muya;
         const { clientX, clientY } = event;
         const barType = this._barType;
-        const index = getIndex(barType, this._block);
         const aspects = calculateAspects(table, barType);
+        if (!aspects.length)
+            return this.hide();
         this._dragInfo = {
             table,
             clientX,
@@ -464,44 +491,46 @@ export class TableDragBar extends BaseFloat {
             // TODO: @JOCS remove use this.selection directly
             const { anchorBlock, anchor, focus, isSelectionInSameBlock }
                 = this.muya.editor.selection ?? {};
-            const { rowOffset, columnOffset } = anchorBlock?.closestBlock(
-                'table.cell',
-            ) as TableBodyCell;
+            const anchorCell = anchorBlock?.closestBlock('table.cell') as TableBodyCell | null;
+            const anchorContext = resolveTableCellContext(anchorCell);
 
-            startOffset = isSelectionInSameBlock
-                ? Math.min(anchor!.offset, focus!.offset)
-                : 0;
-            endOffset = isSelectionInSameBlock
-                ? Math.max(anchor!.offset, focus!.offset)
-                : 0;
-            if (barType === 'bottom') {
-                cursorRowOffset = rowOffset;
-                if (columnOffset === index) {
-                    cursorColumnOffset = curIndex;
-                }
-                else if (
-                    columnOffset >= Math.min(index, curIndex)
-                    && columnOffset <= Math.max(index, curIndex)
-                ) {
-                    cursorColumnOffset = columnOffset + (offset > 0 ? -1 : 1);
+            if (anchorContext) {
+                const { rowOffset, columnOffset } = anchorContext;
+                startOffset = isSelectionInSameBlock
+                    ? Math.min(anchor!.offset, focus!.offset)
+                    : 0;
+                endOffset = isSelectionInSameBlock
+                    ? Math.max(anchor!.offset, focus!.offset)
+                    : 0;
+                if (barType === 'bottom') {
+                    cursorRowOffset = rowOffset;
+                    if (columnOffset === index) {
+                        cursorColumnOffset = curIndex;
+                    }
+                    else if (
+                        columnOffset >= Math.min(index, curIndex)
+                        && columnOffset <= Math.max(index, curIndex)
+                    ) {
+                        cursorColumnOffset = columnOffset + (offset > 0 ? -1 : 1);
+                    }
+                    else {
+                        cursorColumnOffset = columnOffset;
+                    }
                 }
                 else {
                     cursorColumnOffset = columnOffset;
-                }
-            }
-            else {
-                cursorColumnOffset = columnOffset;
-                if (rowOffset === index) {
-                    cursorRowOffset = curIndex;
-                }
-                else if (
-                    rowOffset >= Math.min(index, curIndex)
-                    && rowOffset <= Math.max(index, curIndex)
-                ) {
-                    cursorRowOffset = rowOffset + (offset > 0 ? -1 : 1);
-                }
-                else {
-                    cursorRowOffset = rowOffset;
+                    if (rowOffset === index) {
+                        cursorRowOffset = curIndex;
+                    }
+                    else if (
+                        rowOffset >= Math.min(index, curIndex)
+                        && rowOffset <= Math.max(index, curIndex)
+                    ) {
+                        cursorRowOffset = rowOffset + (offset > 0 ? -1 : 1);
+                    }
+                    else {
+                        cursorRowOffset = rowOffset;
+                    }
                 }
             }
         }
@@ -545,6 +574,8 @@ export class TableDragBar extends BaseFloat {
     }
 
     override hide() {
+        this._block = null;
+        this._barType = null;
         clearTableHighlight(TableDragBar.HIGHLIGHT_OWNER);
         super.hide();
     }
@@ -570,6 +601,10 @@ export class TableDragBar extends BaseFloat {
         const { _block: block, floatBox } = this;
         if (!this.status || !block || !floatBox)
             return false;
+        if (!block.domNode?.isConnected) {
+            this._block = null;
+            return false;
+        }
 
         const cellRect = block.domNode?.getBoundingClientRect();
         const floatRect = floatBox.getBoundingClientRect();
