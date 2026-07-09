@@ -104,9 +104,9 @@ class InlineRenderer {
         let label = null;
         let info = null;
         if (tokens) {
-            label = (tokens[2] + tokens[3]).toLowerCase();
+            label = `${tokens[2] || ''}${tokens[3] || ''}`.toLowerCase();
             info = {
-                href: tokens[6],
+                href: tokens[6] || '',
                 title: tokens[10] || '',
             };
         }

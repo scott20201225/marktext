@@ -6,13 +6,10 @@ export default function footnoteIdentifier(
     this: Renderer,
     {
         h,
-        cursor,
         block,
         token,
-        outerClass,
     }: ISyntaxRenderOptions & { token: FootnoteIdentifierToken },
 ) {
-    const className = this.getClassName(outerClass, block, token, cursor);
     const { marker } = token;
     const { start, end } = token.range;
 
@@ -34,9 +31,14 @@ export default function footnoteIdentifier(
 
     return [
         h(
-            `sup#noteref-${token.content}.${CLASS_NAMES.MU_INLINE_FOOTNOTE_IDENTIFIER}.${CLASS_NAMES.MU_INLINE_RULE}`,
+            `span#noteref-${token.content}.${CLASS_NAMES.MU_INLINE_FOOTNOTE_IDENTIFIER}.${CLASS_NAMES.MU_INLINE_RULE}`,
+            {
+                attrs: {
+                    spellcheck: 'false',
+                },
+            },
             [
-                h(`span.${className}.${CLASS_NAMES.MU_REMOVE}`, startMarker),
+                h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, startMarker),
                 h(
                     'a',
                     {
@@ -44,9 +46,9 @@ export default function footnoteIdentifier(
                             spellcheck: 'false',
                         },
                     },
-                    content,
+                    h(`span.${CLASS_NAMES.MU_REFERENCE_LABEL}`, content),
                 ),
-                h(`span.${className}.${CLASS_NAMES.MU_REMOVE}`, endMarker),
+                h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, endMarker),
             ],
         ),
     ];

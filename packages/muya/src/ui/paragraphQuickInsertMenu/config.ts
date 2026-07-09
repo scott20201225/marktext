@@ -2,6 +2,7 @@ import bulletListIcon from '../../assets/icons/bullet_list/2.png';
 import vegaIcon from '../../assets/icons/chart/2.png';
 import codeIcon from '../../assets/icons/code/2.png';
 import flowchartIcon from '../../assets/icons/flowchart/2.png';
+import linkIcon from '../../assets/icons/format_link/2.png';
 import frontMatterIcon from '../../assets/icons/front_matter/2.png';
 import header1Icon from '../../assets/icons/heading_1/2.png';
 import header2Icon from '../../assets/icons/heading_2/2.png';
@@ -22,6 +23,7 @@ import quoteIcon from '../../assets/icons/quote_block/2.png';
 import sequenceIcon from '../../assets/icons/sequence/2.png';
 import type { TAdmonitionType } from '../../state/admonition';
 
+import footnoteIcon from '../../assets/icons/footnote/2.png';
 import todoListIcon from '../../assets/icons/todolist/2.png';
 import { isOsx } from '../../config';
 import { isKeyboardEvent } from '../../utils';
@@ -193,6 +195,18 @@ export const MENU_CONFIG: IQuickInsertMenuItem[] = [
                 subTitle: '![]()',
                 label: 'choose-image',
                 icon: imageIcon,
+            },
+            {
+                title: 'Link Reference',
+                subTitle: '[label]: https://example.com',
+                label: 'reference-definition',
+                icon: linkIcon,
+            },
+            {
+                title: 'Footnotes',
+                subTitle: '[^1]: note',
+                label: 'footnote-definition',
+                icon: footnoteIcon,
             },
             {
                 title: 'Table Block',

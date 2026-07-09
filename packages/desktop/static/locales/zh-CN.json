@@ -96,7 +96,16 @@
       "moveColumnLeft": "左移当前列",
       "moveColumnRight": "右移当前列",
       "deleteColumn": "删除当前列",
-      "deleteTable": "删除表格"
+      "deleteTable": "删除表格",
+      "taskStatus": "任务状态",
+      "toggleTaskStatus": "切换任务状态",
+      "markAsComplete": "标记为已完成",
+      "markAsIncomplete": "标记为未完成",
+      "listIndentation": "列表缩进",
+      "indent": "增加缩进",
+      "outdent": "减少缩进",
+      "linkReference": "链接引用",
+      "footnotes": "脚注"
     },
     "window": {
       "title": "窗口",

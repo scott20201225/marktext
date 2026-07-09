@@ -317,6 +317,18 @@ export class ParagraphFrontMenu extends BaseFloat {
             return null;
         }
 
+        if (label === 'reference-definition' || label === 'footnote-definition') {
+            const cursorBlock = block.firstContentInDescendant();
+            if (cursorBlock instanceof Format) {
+                cursorBlock.setCursor(0, 0, true);
+                if (label === 'reference-definition')
+                    muya.insertReferenceLink(cursorBlock);
+                else
+                    muya.insertFootnote(cursorBlock);
+            }
+            return null;
+        }
+
         switch (block.blockName) {
             case 'paragraph':
                 // fall through

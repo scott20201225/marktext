@@ -315,6 +315,67 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
         }
       },
       {
+        id: 'taskStatusMenuItem',
+        label: t('menu.paragraph.taskStatus'),
+        submenu: [
+          {
+            id: 'toggleTaskStatusMenuItem',
+            label: t('menu.paragraph.toggleTaskStatus'),
+            click(_menuItem, focusedWindow) {
+              actions.toggleTaskStatus(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'markTaskCompleteMenuItem',
+            label: t('menu.paragraph.markAsComplete'),
+            click(_menuItem, focusedWindow) {
+              actions.markTaskComplete(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'markTaskIncompleteMenuItem',
+            label: t('menu.paragraph.markAsIncomplete'),
+            click(_menuItem, focusedWindow) {
+              actions.markTaskIncomplete(focusedWindow as BrowserWindow | undefined)
+            }
+          }
+        ]
+      },
+      {
+        id: 'listIndentationMenuItem',
+        label: t('menu.paragraph.listIndentation'),
+        submenu: [
+          {
+            id: 'indentListMenuItem',
+            label: t('menu.paragraph.indent'),
+            click(_menuItem, focusedWindow) {
+              actions.indentList(focusedWindow as BrowserWindow | undefined)
+            }
+          },
+          {
+            id: 'outdentListMenuItem',
+            label: t('menu.paragraph.outdent'),
+            click(_menuItem, focusedWindow) {
+              actions.outdentList(focusedWindow as BrowserWindow | undefined)
+            }
+          }
+        ]
+      },
+      {
+        id: 'linkReferenceMenuItem',
+        label: t('menu.paragraph.linkReference'),
+        click(_menuItem, focusedWindow) {
+          actions.linkReference(focusedWindow as BrowserWindow | undefined)
+        }
+      },
+      {
+        id: 'footnotesMenuItem',
+        label: t('menu.paragraph.footnotes'),
+        click(_menuItem, focusedWindow) {
+          actions.footnotes(focusedWindow as BrowserWindow | undefined)
+        }
+      },
+      {
         type: 'separator'
       },
       {

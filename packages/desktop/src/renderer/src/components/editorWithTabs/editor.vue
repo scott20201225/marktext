@@ -1424,6 +1424,9 @@ const handleEditParagraph = (type: unknown) => {
   } else if (typeof type === 'string' && type.startsWith('table.')) {
     editor.value?.tableAction(type)
   } else if (editor.value) {
+    if (type === 'footnote' && !footnote.value) {
+      preferencesStore.SET_SINGLE_PREFERENCE({ type: 'footnote', value: true })
+    }
     editor.value.updateParagraph(type)
     if (typeof type === 'string' && type.startsWith('admonition ')) {
       requestAnimationFrame(() => {

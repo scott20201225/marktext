@@ -96,7 +96,16 @@
       "moveColumnLeft": "Move Column Left",
       "moveColumnRight": "Move Column Right",
       "deleteColumn": "Delete Column",
-      "deleteTable": "Delete Table"
+      "deleteTable": "Delete Table",
+      "taskStatus": "Stato attività",
+      "toggleTaskStatus": "Cambia stato attività",
+      "markAsComplete": "Segna come completata",
+      "markAsIncomplete": "Segna come incompleta",
+      "listIndentation": "Rientro elenco",
+      "indent": "Aumenta rientro",
+      "outdent": "Riduci rientro",
+      "linkReference": "Riferimento collegamento",
+      "footnotes": "Note a piè di pagina"
     },
     "window": {
       "title": "Finestra",

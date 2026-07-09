@@ -72,6 +72,17 @@ interface ITableActionContext {
     endOffset: number;
 }
 
+interface IListParagraphActionBlock {
+    canIndentCurrentListItem?: () => boolean;
+    canOutdentCurrentListItem?: () => boolean;
+    indentCurrentListItem?: () => void;
+    outdentCurrentListItem?: () => void;
+}
+
+interface ITaskCheckboxAttachment {
+    update?: (checked: boolean, source?: string) => void;
+}
+
 // Maps the paragraph-menu labels the desktop sends through `updateParagraph`
 // to muya's `replaceBlockByLabel` vocabulary.
 const PARAGRAPH_LABEL_MAP: Record<string, string> = {
@@ -680,6 +691,211 @@ export class Muya {
         const content = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock;
 
         return content?.parent ?? null;
+    }
+
+    private _activeFormatBlock(): Format | null {
+        const block = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock;
+
+        return block instanceof Format ? block : null;
+    }
+
+    private _activeListParagraphBlock(): IListParagraphActionBlock | null {
+        const block = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock;
+
+        if (!block || block.blockName !== 'paragraph.content')
+            return null;
+
+        return block as IListParagraphActionBlock;
+    }
+
+    private _isBlankParagraphContent(block: Format | null | undefined) {
+        return !!block
+            && block.blockName === 'paragraph.content'
+            && /^\s*$/.test(block.text);
+    }
+
+    private _paragraphContainerOf(block: Format | null | undefined): Parent | null {
+        const paragraph = block?.parent;
+
+        return paragraph?.blockName === 'paragraph' ? paragraph : null;
+    }
+
+    private _appendParagraphBlock(text: string): Content | null {
+        const { scrollPage } = this.editor;
+        if (!scrollPage)
+            return null;
+
+        const paragraphState = {
+            name: 'paragraph' as const,
+            text,
+        };
+        const paragraphBlock = ScrollPage.loadBlock(paragraphState.name).create(this, paragraphState);
+
+        scrollPage.append(paragraphBlock, 'user');
+
+        return paragraphBlock.firstContentInDescendant();
+    }
+
+    private _collectMarkdownMatches(regexp: RegExp): Set<string> {
+        const values = new Set<string>();
+        const markdown = this.getMarkdown();
+        const flags = regexp.flags.includes('g') ? regexp.flags : `${regexp.flags}g`;
+        const matcher = new RegExp(regexp.source, flags);
+
+        for (let match = matcher.exec(markdown); match; match = matcher.exec(markdown)) {
+            const value = match[1]?.trim();
+            if (value)
+                values.add(value.toLowerCase());
+        }
+
+        return values;
+    }
+
+    private _nextFootnoteIdentifier(): string {
+        const used = this._collectMarkdownMatches(/\[\^([^[\]\s]+)\]/g);
+
+        for (let index = 1; index < Number.MAX_SAFE_INTEGER; index++) {
+            const identifier = String(index);
+            if (!used.has(identifier.toLowerCase()))
+                return identifier;
+        }
+
+        return String(Date.now());
+    }
+
+    private _normalizeReferenceLabel(label: string): string {
+        return label.replace(/[\r\n]+/g, ' ').replace(/\s+/g, ' ').replace(/^\[+|\]+$/g, '').trim();
+    }
+
+    private _collectReferenceLabels(): Set<string> {
+        return this._collectMarkdownMatches(/^\s{0,3}\[([^\]]+)\]:/gm);
+    }
+
+    private _taskListItemAtCursor(): Parent | null {
+        let node: Nullable<Parent> = (this.editor.activeContentBlock ?? this.editor.selection.anchorBlock)?.parent;
+        while (node) {
+            if (node.blockName === 'task-list-item')
+                return node;
+            node = node.parent;
+        }
+
+        return null;
+    }
+
+    private _taskCheckboxOf(item: Parent): ITaskCheckboxAttachment | null {
+        let checkbox: ITaskCheckboxAttachment | null = null;
+
+        item.attachments.forEach((attachment: Parent) => {
+            if (attachment.blockName === 'task-list-checkbox')
+                checkbox = attachment as unknown as ITaskCheckboxAttachment;
+        });
+
+        return checkbox;
+    }
+
+    private _setTaskItemStatus(checked: boolean) {
+        const item = this._taskListItemAtCursor();
+        if (!item)
+            return;
+
+        const activeBlock = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock ?? item.firstContentInDescendant();
+        const cursor = activeBlock?.getCursor?.();
+        const startOffset = cursor ? Math.min(cursor.start.offset, cursor.end.offset) : 0;
+        const endOffset = cursor ? Math.max(cursor.start.offset, cursor.end.offset) : startOffset;
+        const checkbox = this._taskCheckboxOf(item);
+
+        checkbox?.update?.(checked, 'user');
+
+        activeBlock?.setCursor(startOffset, endOffset, true);
+    }
+
+    toggleTaskItemStatus() {
+        const item = this._taskListItemAtCursor();
+        if (!item)
+            return;
+
+        const checked = !!(item as Parent & { meta?: { checked?: boolean } }).meta?.checked;
+        this._setTaskItemStatus(!checked);
+    }
+
+    setTaskItemStatus(checked: boolean) {
+        this._setTaskItemStatus(checked);
+    }
+
+    indentListItem() {
+        const block = this._activeListParagraphBlock();
+        if (block?.canIndentCurrentListItem?.())
+            block.indentCurrentListItem?.();
+    }
+
+    outdentListItem() {
+        const block = this._activeListParagraphBlock();
+        if (block?.canOutdentCurrentListItem?.())
+            block.outdentCurrentListItem?.();
+    }
+
+    insertFootnote(targetBlock?: Format | null) {
+        const { scrollPage } = this.editor;
+        if (!scrollPage)
+            return;
+
+        const block = targetBlock ?? this._activeFormatBlock();
+        const identifier = this._nextFootnoteIdentifier();
+        const footnoteState = {
+            name: 'footnote' as const,
+            meta: { identifier },
+            children: [{ name: 'paragraph' as const, text: '' }],
+        };
+        const footnoteBlock = ScrollPage.loadBlock(footnoteState.name).create(this, footnoteState);
+
+        const paragraph = this._paragraphContainerOf(block);
+        if (paragraph && this._isBlankParagraphContent(block))
+            paragraph.replaceWith(footnoteBlock);
+        else
+            scrollPage.append(footnoteBlock, 'user');
+
+        footnoteBlock.firstContentInDescendant()?.setCursor(0, 0, true);
+    }
+
+    insertReferenceLink(targetBlock?: Format | null) {
+        const block = targetBlock ?? this._activeFormatBlock();
+        const cursor = block?.getCursor?.();
+        const selectedText
+            = block && cursor
+                ? block.text.substring(
+                        Math.min(cursor.start.offset, cursor.end.offset),
+                        Math.max(cursor.start.offset, cursor.end.offset),
+                    )
+                : '';
+        const normalizedBaseLabel = this._normalizeReferenceLabel(selectedText) || 'link';
+        const existingLabels = this._collectReferenceLabels();
+        let label = normalizedBaseLabel;
+        if (existingLabels.has(label.toLowerCase())) {
+            let suffix = 2;
+            while (existingLabels.has(`${normalizedBaseLabel}-${suffix}`.toLowerCase()))
+                suffix++;
+            label = `${normalizedBaseLabel}-${suffix}`;
+        }
+
+        const definitionText = `[${label}]: `;
+
+        if (block && this._isBlankParagraphContent(block)) {
+            block.text = definitionText;
+            if (selectedText)
+                block.setCursor(definitionText.length, definitionText.length, true);
+            else
+                block.setCursor(1, 1 + label.length, true);
+            return;
+        }
+
+        const definitionBlock = this._appendParagraphBlock(definitionText);
+        if (!definitionBlock)
+            return;
+
+        if (selectedText)
+            definitionBlock.setCursor(definitionText.length, definitionText.length, true);
+        else
+            definitionBlock.setCursor(1, 1 + label.length, true);
     }
 
     /**
@@ -1306,6 +1522,41 @@ export class Muya {
      * `loose-list-item`, `reset-to-paragraph`, and the diagram types.
      */
     updateParagraph(type: string) {
+        if (type === 'link-reference') {
+            this.insertReferenceLink();
+            return;
+        }
+
+        if (type === 'footnote') {
+            this.insertFootnote();
+            return;
+        }
+
+        if (type === 'task-status-toggle') {
+            this.toggleTaskItemStatus();
+            return;
+        }
+
+        if (type === 'task-status-complete') {
+            this.setTaskItemStatus(true);
+            return;
+        }
+
+        if (type === 'task-status-incomplete') {
+            this.setTaskItemStatus(false);
+            return;
+        }
+
+        if (type === 'list-indent') {
+            this.indentListItem();
+            return;
+        }
+
+        if (type === 'list-outdent') {
+            this.outdentListItem();
+            return;
+        }
+
         const block = this._outmostBlockAtCursor();
         if (!block)
             return;

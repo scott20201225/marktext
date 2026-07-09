@@ -96,7 +96,16 @@
       "moveColumnLeft": "Move Column Left",
       "moveColumnRight": "Move Column Right",
       "deleteColumn": "Delete Column",
-      "deleteTable": "Delete Table"
+      "deleteTable": "Delete Table",
+      "taskStatus": "Görev durumu",
+      "toggleTaskStatus": "Görev durumunu değiştir",
+      "markAsComplete": "Tamamlandı olarak işaretle",
+      "markAsIncomplete": "Tamamlanmadı olarak işaretle",
+      "listIndentation": "Liste girintisi",
+      "indent": "Girintiyi artır",
+      "outdent": "Girintiyi azalt",
+      "linkReference": "Bağlantı referansı",
+      "footnotes": "Dipnotlar"
     },
     "window": {
       "title": "Pencere",

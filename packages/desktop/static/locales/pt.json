@@ -96,7 +96,16 @@
       "moveColumnLeft": "Move Column Left",
       "moveColumnRight": "Move Column Right",
       "deleteColumn": "Delete Column",
-      "deleteTable": "Delete Table"
+      "deleteTable": "Delete Table",
+      "taskStatus": "Estado da tarefa",
+      "toggleTaskStatus": "Alternar estado da tarefa",
+      "markAsComplete": "Marcar como concluída",
+      "markAsIncomplete": "Marcar como incompleta",
+      "listIndentation": "Recuo da lista",
+      "indent": "Aumentar recuo",
+      "outdent": "Diminuir recuo",
+      "linkReference": "Referência de link",
+      "footnotes": "Notas de rodapé"
     },
     "window": {
       "title": "Janela",

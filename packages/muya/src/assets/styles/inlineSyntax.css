@@ -592,23 +592,33 @@ blockquote .mu-hide.mu-math > .mu-math-render {
     font-weight: 600;
 }
 
-/* inline footnote identifier — `[^id]` rendered as a small superscript pill.
-   Marker spans (`[^` / `]`) inherit `.mu-hide` from the syntax renderer when
-   the cursor isn't on this token, so the user sees just the identifier text
-   inside the pill. */
+.mu-reference-definition-url {
+    color: var(--editor-color);
+    text-decoration: underline;
+    text-underline-offset: 0.08em;
+}
+
 .mu-inline-footnote-identifier {
-    padding: 0 0.4em;
+    display: inline-flex;
+    align-items: baseline;
+    gap: 0;
+    padding: 0;
 
-    color: var(--editor-color-80);
-    font-size: 0.7em;
-
-    background: var(--code-block-bg-color);
-    border-radius: 3px;
-
+    color: var(--editor-color-50);
+    font-size: 1em;
+    vertical-align: baseline;
     cursor: pointer;
 }
 
 .mu-inline-footnote-identifier a {
-    color: var(--editor-color);
+    color: inherit;
     text-decoration: none;
+}
+
+.mu-inline-footnote-identifier .mu-reference-label {
+    margin: 0;
+}
+
+.mu-inline-footnote-identifier .mu-reference-marker {
+    font-size: 1em;
 }

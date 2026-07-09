@@ -37,13 +37,17 @@ afterEach(() => {
         delete (window as Partial<Window>).MUYA_VERSION;
 });
 
-function bootMuya(markdown: string): Muya {
+function bootMuya(options: ConstructorParameters<typeof Muya>[1]): Muya {
     const host = document.createElement('div');
     document.body.appendChild(host);
-    const muya = new Muya(host, { markdown } as ConstructorParameters<typeof Muya>[1]);
+    const muya = new Muya(host, options);
     muya.init();
     bootedHosts.push(muya.domNode);
     return muya;
+}
+
+function bootMarkdown(markdown: string): Muya {
+    return bootMuya({ markdown } as ConstructorParameters<typeof Muya>[1]);
 }
 
 // Find the leaf `.content` block whose rendered text matches `text`, the way a
@@ -90,7 +94,7 @@ function blockText(state: ReturnType<Muya['getState']>, index: number): string {
 
 describe('backspace at start-of-paragraph — merge with previous block', () => {
     it('merges `beta` onto the end of `alpha` into a single paragraph', async () => {
-        const muya = bootMuya('alpha\n\nbeta\n');
+        const muya = bootMarkdown('alpha\n\nbeta\n');
         const beta = contentByText(muya, 'beta');
 
         backspaceAtStart(muya, beta);
@@ -103,7 +107,7 @@ describe('backspace at start-of-paragraph — merge with previous block', () => 
     });
 
     it('lands the caret at the join point (end of the former first paragraph)', async () => {
-        const muya = bootMuya('alpha\n\nbeta\n');
+        const muya = bootMarkdown('alpha\n\nbeta\n');
         const beta = contentByText(muya, 'beta');
 
         backspaceAtStart(muya, beta);
@@ -121,7 +125,7 @@ describe('backspace at start-of-paragraph — merge with previous block', () => 
     });
 
     it('is a no-op for the first paragraph in the document (no previous block)', async () => {
-        const muya = bootMuya('only\n');
+        const muya = bootMarkdown('only\n');
         const only = contentByText(muya, 'only');
 
         backspaceAtStart(muya, only);
@@ -135,7 +139,7 @@ describe('backspace at start-of-paragraph — merge with previous block', () => 
 
 describe('backspace at start-of-paragraph — unwrap block-quote / list', () => {
     it('unwraps an only-child quote paragraph out of the block-quote', async () => {
-        const muya = bootMuya('> quoted\n');
+        const muya = bootMarkdown('> quoted\n');
         const quoted = contentByText(muya, 'quoted');
 
         backspaceAtStart(muya, quoted);
@@ -148,7 +152,7 @@ describe('backspace at start-of-paragraph — unwrap block-quote / list', () => 
     });
 
     it('unwraps an only/first list item out of the list to a paragraph', async () => {
-        const muya = bootMuya('- item one\n');
+        const muya = bootMarkdown('- item one\n');
         const item = contentByText(muya, 'item one');
 
         backspaceAtStart(muya, item);
@@ -161,7 +165,7 @@ describe('backspace at start-of-paragraph — unwrap block-quote / list', () => 
     });
 
     it('keeps the remaining items when the FIRST of several list items is unwrapped', async () => {
-        const muya = bootMuya('- one\n- two\n- three\n');
+        const muya = bootMarkdown('- one\n- two\n- three\n');
         const first = contentByText(muya, 'one');
 
         backspaceAtStart(muya, first);
@@ -180,7 +184,7 @@ describe('backspace at start-of-paragraph — unwrap block-quote / list', () => 
     });
 
     it('merges a MIDDLE list item into the previous item, preserving all text', async () => {
-        const muya = bootMuya('- one\n- two\n- three\n');
+        const muya = bootMarkdown('- one\n- two\n- three\n');
         const two = contentByText(muya, 'two');
 
         backspaceAtStart(muya, two);
@@ -195,5 +199,84 @@ describe('backspace at start-of-paragraph — unwrap block-quote / list', () => 
         const state = muya.getState();
         expect(state.length).toBe(1);
         expect(state[0].name).toBe('bullet-list');
+    });
+});
+
+describe('backspace at start-of-paragraph — footnote', () => {
+    it('unwraps a non-empty only-child footnote into a plain paragraph', async () => {
+        const muya = bootMuya({
+            json: [
+                {
+                    name: 'footnote',
+                    meta: { identifier: '1' },
+                    children: [{ name: 'paragraph', text: 'alpha' }],
+                },
+            ],
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const alpha = contentByText(muya, 'alpha');
+
+        backspaceAtStart(muya, alpha);
+
+        await flush();
+        const state = muya.getState();
+        expect(state.length).toBe(1);
+        expect(state[0].name).toBe('paragraph');
+        expect(blockText(state, 0)).toBe('alpha');
+    });
+
+    it('unwraps all footnote children when backspacing at the first footnote paragraph', async () => {
+        const muya = bootMuya({
+            json: [
+                {
+                    name: 'footnote',
+                    meta: { identifier: '1' },
+                    children: [
+                        { name: 'paragraph', text: 'alpha' },
+                        { name: 'paragraph', text: 'beta' },
+                    ],
+                },
+            ],
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const alpha = contentByText(muya, 'alpha');
+
+        backspaceAtStart(muya, alpha);
+
+        await flush();
+        const state = muya.getState();
+        expect(state.length).toBe(2);
+        expect(state[0].name).toBe('paragraph');
+        expect(blockText(state, 0)).toBe('alpha');
+        expect(state[1].name).toBe('paragraph');
+        expect(blockText(state, 1)).toBe('beta');
+    });
+
+    it('merges later footnote paragraphs with the previous paragraph instead of swallowing Backspace', async () => {
+        const muya = bootMuya({
+            json: [
+                {
+                    name: 'footnote',
+                    meta: { identifier: '1' },
+                    children: [
+                        { name: 'paragraph', text: 'alpha' },
+                        { name: 'paragraph', text: 'beta' },
+                    ],
+                },
+            ],
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const beta = contentByText(muya, 'beta');
+
+        backspaceAtStart(muya, beta);
+
+        await flush();
+        const state = muya.getState();
+        expect(state.length).toBe(1);
+        expect(state[0].name).toBe('footnote');
+        const children = (state[0] as { children: Array<{ name: string; text?: string }> }).children;
+        expect(children).toHaveLength(1);
+        expect(children[0].name).toBe('paragraph');
+        expect(children[0].text).toBe('alphabeta');
     });
 });

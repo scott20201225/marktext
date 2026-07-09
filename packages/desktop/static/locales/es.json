@@ -96,7 +96,16 @@
       "moveColumnLeft": "Move Column Left",
       "moveColumnRight": "Move Column Right",
       "deleteColumn": "Delete Column",
-      "deleteTable": "Delete Table"
+      "deleteTable": "Delete Table",
+      "taskStatus": "Estado de la tarea",
+      "toggleTaskStatus": "Cambiar estado de la tarea",
+      "markAsComplete": "Marcar como completada",
+      "markAsIncomplete": "Marcar como incompleta",
+      "listIndentation": "Sangría de lista",
+      "indent": "Aumentar sangría",
+      "outdent": "Disminuir sangría",
+      "linkReference": "Referencia de enlace",
+      "footnotes": "Notas al pie"
     },
     "window": {
       "title": "Ventana",

@@ -44,6 +44,8 @@ export const ko = {
         'Plantuml': 'Plantuml',
         'Flowchart': '순서도',
         'Sequence': '시퀀스 다이어그램',
+        'Link Reference': '링크 참조',
+        'Footnotes': '각주',
         'basic blocks': '기본 블록',
         'headings': '제목',
         'advanced blocks': '고급 블록',

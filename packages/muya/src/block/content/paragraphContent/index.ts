@@ -236,6 +236,9 @@ class ParagraphContent extends Format {
             case 'block-quote':
                 return this._handleBackspaceInBlockQuote();
 
+            case 'footnote':
+                return this._handleBackspaceInFootnote();
+
             case 'list-item': // fall through
             case 'task-list-item':
                 return this._handleBackspaceInList();
@@ -585,6 +588,7 @@ class ParagraphContent extends Format {
         while (parent && !parent.isScrollPage) {
             if (
                 parent.blockName === 'block-quote'
+                || parent.blockName === 'footnote'
                 || parent.blockName === 'list-item'
                 || parent.blockName === 'task-list-item'
             ) {
@@ -631,6 +635,49 @@ class ParagraphContent extends Format {
         }
 
         cursorBlock!.setCursor(0, 0, true);
+    }
+
+    private _handleBackspaceInFootnote() {
+        const parent = this.parent!;
+        const footnote = parent.parent!;
+
+        if (!parent.isFirstChild())
+            return this._handleBackspaceInParagraph();
+
+        if (parent.isOnlyChild() && !/\S/.test(this.text)) {
+            let cursorBlock = footnote.prev?.lastContentInDescendant()
+                ?? footnote.next?.firstContentInDescendant()
+                ?? null;
+
+            if (!cursorBlock) {
+                const paragraphState: IParagraphState = {
+                    name: 'paragraph',
+                    text: '',
+                };
+                const paragraphBlock = ScrollPage.loadBlock('paragraph').create(
+                    this.muya,
+                    paragraphState,
+                );
+
+                footnote.parent!.insertAfter(paragraphBlock, footnote);
+                cursorBlock = paragraphBlock.firstContentInDescendant();
+            }
+
+            footnote.remove();
+            cursorBlock?.setCursor(0, 0, true);
+            return;
+        }
+
+        let cursorBlock: Content | null = null;
+        footnote.forEach((node, i: number) => {
+            const block = (node as Parent).clone() as Parent;
+            footnote.parent!.insertBefore(block, footnote);
+            if (i === 0)
+                cursorBlock = block.firstContentInDescendant();
+        });
+
+        footnote.remove();
+        cursorBlock?.setCursor(0, 0, true);
     }
 
     private _handleBackspaceInList() {
@@ -957,6 +1004,26 @@ class ParagraphContent extends Format {
         }
 
         this.insertTab();
+    }
+
+    canIndentCurrentListItem() {
+        return this._canIndentListItem();
+    }
+
+    canOutdentCurrentListItem() {
+        return this._getUnindentType() != null;
+    }
+
+    indentCurrentListItem() {
+        if (this._canIndentListItem())
+            this._indentListItem();
+    }
+
+    outdentCurrentListItem() {
+        const unindentType = this._getUnindentType();
+
+        if (unindentType != null)
+            this._unindentListItem(unindentType);
     }
 }
 

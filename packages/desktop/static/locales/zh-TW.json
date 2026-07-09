@@ -96,7 +96,16 @@
       "moveColumnLeft": "左移目前欄",
       "moveColumnRight": "右移目前欄",
       "deleteColumn": "刪除目前欄",
-      "deleteTable": "刪除表格"
+      "deleteTable": "刪除表格",
+      "taskStatus": "任務狀態",
+      "toggleTaskStatus": "切換任務狀態",
+      "markAsComplete": "標記為已完成",
+      "markAsIncomplete": "標記為未完成",
+      "listIndentation": "清單縮排",
+      "indent": "增加縮排",
+      "outdent": "減少縮排",
+      "linkReference": "連結引用",
+      "footnotes": "腳註"
     },
     "window": {
       "title": "視窗",

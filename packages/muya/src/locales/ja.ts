@@ -44,6 +44,8 @@ export const ja = {
         'Plantuml': 'Plantuml',
         'Flowchart': 'フローチャート',
         'Sequence': 'シーケンス図',
+        'Link Reference': 'リンク参照',
+        'Footnotes': '脚注',
         'basic blocks': '基礎ブロック',
         'headings': 'タイトル',
         'advanced blocks': '高級ブロック',

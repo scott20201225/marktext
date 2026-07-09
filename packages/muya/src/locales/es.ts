@@ -44,6 +44,8 @@ export const es = {
         'Plantuml': 'Plantuml',
         'Flowchart': 'Diagrama de flujo',
         'Sequence': 'Diagrama de secuencia',
+        'Link Reference': 'Referencia de enlace',
+        'Footnotes': 'Notas al pie',
         'basic blocks': 'bloques básicos',
         'headings': 'encabezados',
         'advanced blocks': 'bloques avanzados',

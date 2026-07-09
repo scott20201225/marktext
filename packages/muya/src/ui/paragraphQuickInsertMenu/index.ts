@@ -273,6 +273,20 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
     }
 
     private _runQuickInsertAction(label: string, block: ParagraphContent) {
+        if (label === 'reference-definition' || label === 'footnote-definition') {
+            if (checkQuickInsert(block.text))
+                block.text = '';
+
+            block.setCursor(0, 0, true);
+
+            if (label === 'reference-definition')
+                this.muya.insertReferenceLink(block);
+            else
+                this.muya.insertFootnote(block);
+
+            return;
+        }
+
         if (label === 'choose-image') {
             block.text = '';
             block.setCursor(0, 0, true);

@@ -41,6 +41,19 @@ const TABLE_SEPARATOR_IDS: readonly string[] = [
   'tableDeleteSeparator'
 ]
 
+const TASK_STATUS_MENU_IDS: readonly string[] = [
+  'taskStatusMenuItem',
+  'toggleTaskStatusMenuItem',
+  'markTaskCompleteMenuItem',
+  'markTaskIncompleteMenuItem'
+]
+
+const LIST_INDENTATION_MENU_IDS: readonly string[] = [
+  'listIndentationMenuItem',
+  'indentListMenuItem',
+  'outdentListMenuItem'
+]
+
 const ALERT_MENU_ID_BY_TYPE: Readonly<Record<string, string>> = Object.freeze({
   note: 'noteBlockMenuItem',
   tip: 'tipBlockMenuItem',
@@ -244,6 +257,34 @@ export const taskList = (win: Win): void => {
   transformEditorElement(win, 'ul-task')
 }
 
+export const toggleTaskStatus = (win: Win): void => {
+  transformEditorElement(win, 'task-status-toggle')
+}
+
+export const markTaskComplete = (win: Win): void => {
+  transformEditorElement(win, 'task-status-complete')
+}
+
+export const markTaskIncomplete = (win: Win): void => {
+  transformEditorElement(win, 'task-status-incomplete')
+}
+
+export const indentList = (win: Win): void => {
+  transformEditorElement(win, 'list-indent')
+}
+
+export const outdentList = (win: Win): void => {
+  transformEditorElement(win, 'list-outdent')
+}
+
+export const linkReference = (win: Win): void => {
+  transformEditorElement(win, 'link-reference')
+}
+
+export const footnotes = (win: Win): void => {
+  transformEditorElement(win, 'footnote')
+}
+
 export const increaseHeading = (win: Win): void => {
   transformEditorElement(win, 'upgrade heading')
 }
@@ -443,6 +484,12 @@ export const updateSelectionMenus = (
   if (!affiliation.ul && !affiliation.ol && !affiliation.task) {
     setMultipleStatus(applicationMenu, ['looseListItemMenuItem'], false)
   }
+
+  const isListItem = !!affiliation.ul || !!affiliation.ol || !!affiliation.task
+  const enableListExtras = !isCodeFences && !isMultiline && isListItem
+  const enableTaskStatus = !isCodeFences && !isMultiline && !!state.isTaskList
+  setMultipleStatus(applicationMenu, LIST_INDENTATION_MENU_IDS, enableListExtras)
+  setMultipleStatus(applicationMenu, TASK_STATUS_MENU_IDS, enableTaskStatus)
 
   // Front matter may exist at most once per document; disable the menu item
   // whenever the document already has one.

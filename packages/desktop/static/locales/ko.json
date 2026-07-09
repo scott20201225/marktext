@@ -96,7 +96,16 @@
       "moveColumnLeft": "Move Column Left",
       "moveColumnRight": "Move Column Right",
       "deleteColumn": "Delete Column",
-      "deleteTable": "Delete Table"
+      "deleteTable": "Delete Table",
+      "taskStatus": "작업 상태",
+      "toggleTaskStatus": "작업 상태 전환",
+      "markAsComplete": "완료로 표시",
+      "markAsIncomplete": "미완료로 표시",
+      "listIndentation": "목록 들여쓰기",
+      "indent": "들여쓰기 늘리기",
+      "outdent": "들여쓰기 줄이기",
+      "linkReference": "링크 참조",
+      "footnotes": "각주"
     },
     "window": {
       "title": "창",

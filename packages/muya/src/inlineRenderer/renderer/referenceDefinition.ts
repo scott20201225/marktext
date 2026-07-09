@@ -1,25 +1,36 @@
 import type { ISyntaxRenderOptions, ReferenceDefinitionToken } from '../types';
 import type Renderer from './index';
 import { CLASS_NAMES } from '../../config';
+import { sanitizeHyperlink } from '../../utils/url';
 
 export default function referenceDefinition(
     this: Renderer,
     { h, block, token }: ISyntaxRenderOptions & { token: ReferenceDefinitionToken },
 ) {
-    const className = CLASS_NAMES.MU_REFERENCE_MARKER;
     const {
-        leftBracket,
-        label,
-        backlash,
-        // rightBracket,
-        // leftHrefMarker,
-        // href,
-        // rightHrefMarker,
-        titleMarker,
-        title,
-        rightTitleSpace,
+        leftBracket = '',
+        label = '',
+        backlash = '',
+        rightBracket = '',
+        leftHrefMarker = '',
+        href = '',
+        rightHrefMarker = '',
+        leftTitleSpace = '',
+        titleMarker = '',
+        title = '',
     } = token;
+    const { raw } = token;
     const { start, end } = token.range;
+    const labelStart = start + leftBracket.length;
+    const labelEnd = labelStart + label.length;
+    const backlashEnd = labelEnd + backlash.length;
+    const rightBracketEnd = backlashEnd + rightBracket.length;
+    const leftHrefMarkerEnd = rightBracketEnd + leftHrefMarker.length;
+    const hrefEnd = leftHrefMarkerEnd + href.length;
+    const rightHrefMarkerEnd = hrefEnd + rightHrefMarker.length;
+    const leftTitleSpaceEnd = rightHrefMarkerEnd + leftTitleSpace.length;
+    const titleMarkerEnd = leftTitleSpaceEnd + titleMarker.length;
+    const titleEnd = titleMarkerEnd + title.length;
     const leftBracketContent = this.highlight(
         h,
         block,
@@ -30,35 +41,70 @@ export default function referenceDefinition(
     const labelContent = this.highlight(
         h,
         block,
-        start + leftBracket.length,
-        start + leftBracket.length + label.length,
+        labelStart,
+        labelEnd,
         token,
     );
-    const middleContent = this.highlight(
+    const rightBracketContent = this.highlight(
         h,
         block,
-        start + leftBracket.length + label.length + backlash.length,
-        end - rightTitleSpace.length - titleMarker.length - title.length,
+        backlashEnd,
+        rightBracketEnd,
+        token,
+    );
+    const leftHrefMarkerContent = this.highlight(
+        h,
+        block,
+        rightBracketEnd,
+        leftHrefMarkerEnd,
+        token,
+    );
+    const hrefContent = this.highlight(
+        h,
+        block,
+        leftHrefMarkerEnd,
+        hrefEnd,
+        token,
+    );
+    const rightHrefMarkerContent = this.highlight(
+        h,
+        block,
+        hrefEnd,
+        rightHrefMarkerEnd,
+        token,
+    );
+    const leftTitleSpaceContent = this.highlight(
+        h,
+        block,
+        rightHrefMarkerEnd,
+        leftTitleSpaceEnd,
+        token,
+    );
+    const leftTitleMarkerContent = this.highlight(
+        h,
+        block,
+        leftTitleSpaceEnd,
+        titleMarkerEnd,
         token,
     );
     const titleContent = this.highlight(
         h,
         block,
-        end - rightTitleSpace.length - titleMarker.length - title.length,
-        end - titleMarker.length - rightTitleSpace.length,
+        titleMarkerEnd,
+        titleEnd,
         token,
     );
     const rightContent = this.highlight(
         h,
         block,
-        end - titleMarker.length - rightTitleSpace.length,
+        titleEnd,
         end,
         token,
     );
     const backlashStart = start + leftBracket.length + label.length;
 
     return [
-        h(`span.${className}`, leftBracketContent),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, leftBracketContent),
         h(
             `span.${CLASS_NAMES.MU_REFERENCE_LABEL}`,
             {
@@ -75,18 +121,32 @@ export default function referenceDefinition(
             backlashStart,
             token,
         ),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, { attrs: { spellcheck: 'false' } }, rightBracketContent),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, { attrs: { spellcheck: 'false' } }, leftHrefMarkerContent),
         h(
-            `span.${className}`,
+            `a.${CLASS_NAMES.MU_REFERENCE_LINK}.${CLASS_NAMES.MU_REFERENCE_DEFINITION_URL}.${CLASS_NAMES.MU_INLINE_RULE}`,
             {
                 attrs: {
                     spellcheck: 'false',
                 },
+                props: {
+                    href: sanitizeHyperlink(href),
+                    title: title || undefined,
+                },
+                dataset: {
+                    start: String(start),
+                    end: String(end),
+                    raw,
+                },
             },
-            middleContent,
+            hrefContent,
         ),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, { attrs: { spellcheck: 'false' } }, rightHrefMarkerContent),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, { attrs: { spellcheck: 'false' } }, leftTitleSpaceContent),
+        h(`span.${CLASS_NAMES.MU_REFERENCE_MARKER}`, { attrs: { spellcheck: 'false' } }, leftTitleMarkerContent),
         h(`span.${CLASS_NAMES.MU_REFERENCE_TITLE}`, titleContent),
         h(
-            `span.${className}`,
+            `span.${CLASS_NAMES.MU_REFERENCE_MARKER}`,
             {
                 attrs: {
                     spellcheck: 'false',
