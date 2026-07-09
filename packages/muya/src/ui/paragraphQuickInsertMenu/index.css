@@ -89,6 +89,11 @@
     filter: drop-shadow(20px 0 currentcolor);
 }
 
+.mu-quick-insert .icon-container > i.icon.admonition-icon > svg {
+    width: 100%;
+    height: 100%;
+}
+
 .mu-quick-insert .icon-container > i.icon.sequence-badged::after {
     position: absolute;
     right: -2px;

@@ -29,6 +29,14 @@ const ADMONITION_TITLES: Record<TAdmonitionType, string> = {
     important: 'Important',
 };
 
+const ADMONITION_COLORS: Record<TAdmonitionType, string> = {
+    note: '#2563eb',
+    tip: '#059669',
+    caution: '#d97706',
+    warning: '#dc2626',
+    important: '#7c3aed',
+};
+
 const SVG_NS = 'http://www.w3.org/2000/svg';
 const ADMONITION_ICON_ATTRS = {
     fill: 'none',
@@ -101,6 +109,14 @@ export function admonitionMarker(type: TAdmonitionType) {
 
 export function admonitionTitle(type: TAdmonitionType) {
     return ADMONITION_TITLES[type];
+}
+
+export function admonitionColor(type: TAdmonitionType) {
+    return ADMONITION_COLORS[type];
+}
+
+export function admonitionIconNodes(type: TAdmonitionType) {
+    return ADMONITION_ICON_NODES[type];
 }
 
 export function createAdmonitionIcon(doc: Document, type: TAdmonitionType, className: string) {

@@ -3,6 +3,7 @@ import type { Muya } from '../../index';
 import type {
     IQuickInsertMenuItem,
 } from './config';
+import { admonitionColor, admonitionIconNodes } from '../../state/admonition';
 import Fuse from 'fuse.js';
 import { replaceBlockByLabel } from '../../block/blockTransforms';
 import ParagraphContent from '../../block/content/paragraphContent';
@@ -26,6 +27,37 @@ function checkCanInsertFrontMatter(muya: Muya, block: ParagraphContent) {
         frontMatter
         && !block.parent?.prev
         && block.parent?.parent?.blockName === 'scrollpage'
+    );
+}
+
+function buildTooltip(title: string, shortCut?: string) {
+    return shortCut ? `${title}\n${shortCut}` : title;
+}
+
+function renderAdmonitionIcon(admonitionType: NonNullable<IQuickInsertMenuItem['children'][number]['admonitionType']>) {
+    return h(
+        'i.icon.admonition-icon',
+        {
+            style: {
+                color: admonitionColor(admonitionType),
+            },
+        },
+        h(
+            'svg',
+            {
+                attrs: {
+                    viewBox: '0 0 24 24',
+                    'aria-hidden': 'true',
+                    focusable: 'false',
+                    fill: 'none',
+                    stroke: 'currentColor',
+                    'stroke-width': '1.9',
+                    'stroke-linecap': 'round',
+                    'stroke-linejoin': 'round',
+                },
+            },
+            admonitionIconNodes(admonitionType).map(node => h(node.tag, { attrs: node.attrs })),
+        ),
     );
 }
 
@@ -118,14 +150,13 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
             const items = [];
 
             for (const item of section.children) {
-                const { title, subTitle, label, icon, shortCut } = item;
-                const iconSelector = label === 'diagram sequence'
-                    ? 'i.icon.sequence-badged'
-                    : 'i.icon';
-                const iconVnode = h(
-                    'div.icon-container',
-                    h(
-                        iconSelector,
+                const { title, subTitle, label, icon, shortCut, admonitionType } = item;
+                const iconNode = admonitionType
+                    ? renderAdmonitionIcon(admonitionType)
+                    : h(
+                        label === 'diagram sequence'
+                            ? 'i.icon.sequence-badged'
+                            : 'i.icon',
                         h(
                             `i.icon-${label.replace(/\s/g, '-')}`,
                             {
@@ -136,8 +167,8 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
                             },
                             '',
                         ),
-                    ),
-                );
+                    );
+                const iconVnode = h('div.icon-container', iconNode);
 
                 const description = h('div.description', [
                     h(
@@ -155,6 +186,9 @@ export class ParagraphQuickInsertMenu extends BaseScrollFloat {
                     h(
                         selector,
                         {
+                            attrs: {
+                                'data-tooltip': buildTooltip(i18n.t(title), shortCut),
+                            },
                             dataset: { label },
                             on: {
                                 click: () => {

@@ -1,9 +1,11 @@
 import type { Muya } from '../muya';
 import type { IFrontmatterMeta } from '../state/types';
+import type { TAdmonitionType } from '../state/admonition';
 import type Parent from './base/parent';
 import emptyStates from '../config/emptyStates';
 import { getCursorReference } from '../selection';
 import { isParagraphState } from '../state/types';
+import { isAdmonitionType } from '../state/admonition';
 import { deepClone } from '../utils';
 import logger from '../utils/logger';
 import { ScrollPage } from './scrollPage';
@@ -160,11 +162,26 @@ function buildDiagramBlock(label: string, muya: Muya) {
     return ScrollPage.loadBlock(name).create(muya, diagramState);
 }
 
+function buildAdmonitionBlock(admonitionType: TAdmonitionType, muya: Muya, text: string) {
+    const blockQuoteState = deepClone(emptyStates['block-quote']);
+    blockQuoteState.meta = { admonitionType };
+    const firstChild = blockQuoteState.children[0];
+    if (isParagraphState(firstChild))
+        firstChild.text = text;
+
+    return ScrollPage.loadBlock('block-quote').create(muya, blockQuoteState);
+}
+
 export function buildReplacementBlock(label: string, muya: Muya, text: string) {
     if (label.startsWith('atx-heading '))
         return buildHeadingBlock(label, muya, text);
     if (label.startsWith('diagram '))
         return buildDiagramBlock(label, muya);
+    if (label.startsWith('admonition ')) {
+        const admonitionType = label.slice('admonition '.length);
+        if (isAdmonitionType(admonitionType))
+            return buildAdmonitionBlock(admonitionType, muya, text);
+    }
 
     switch (label) {
         case 'paragraph':
@@ -295,11 +312,11 @@ export function canTurnInto(block: Parent, label: string): boolean {
             if (paragraphIsEmpty)
                 return label !== 'frontmatter';
 
-            return /paragraph|atx-heading|block-quote|order-list|bullet-list|task-list/.test(label);
+            return /paragraph|atx-heading|block-quote|order-list|bullet-list|task-list|admonition /.test(label);
         }
 
         case 'atx-heading':
-            return /atx-heading|paragraph/.test(label);
+            return /atx-heading|paragraph|admonition /.test(label);
 
         case 'order-list':
             // fall through

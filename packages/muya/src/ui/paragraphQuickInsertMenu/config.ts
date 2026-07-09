@@ -20,6 +20,7 @@ import paragraphIcon from '../../assets/icons/paragraph/2.png';
 import plantumlIcon from '../../assets/icons/plantuml/2.png';
 import quoteIcon from '../../assets/icons/quote_block/2.png';
 import sequenceIcon from '../../assets/icons/sequence/2.png';
+import type { TAdmonitionType } from '../../state/admonition';
 
 import todoListIcon from '../../assets/icons/todolist/2.png';
 import { isOsx } from '../../config';
@@ -42,7 +43,8 @@ export interface IQuickInsertMenuItem {
         title: string;
         subTitle: string;
         label: string;
-        icon: string;
+        icon?: string;
+        admonitionType?: TAdmonitionType;
         score?: number;
         i18nTitle?: string;
         shortCut?: string;
@@ -337,6 +339,36 @@ export const MENU_CONFIG: IQuickInsertMenuItem[] = [
                 subTitle: 'By js-sequence-diagrams',
                 label: 'diagram sequence',
                 icon: sequenceIcon,
+            },
+            {
+                title: 'Note',
+                subTitle: '[!NOTE]',
+                label: 'admonition note',
+                admonitionType: 'note',
+            },
+            {
+                title: 'Tip',
+                subTitle: '[!TIP]',
+                label: 'admonition tip',
+                admonitionType: 'tip',
+            },
+            {
+                title: 'Caution',
+                subTitle: '[!CAUTION]',
+                label: 'admonition caution',
+                admonitionType: 'caution',
+            },
+            {
+                title: 'Warning',
+                subTitle: '[!WARNING]',
+                label: 'admonition warning',
+                admonitionType: 'warning',
+            },
+            {
+                title: 'Important',
+                subTitle: '[!IMPORTANT]',
+                label: 'admonition important',
+                admonitionType: 'important',
             },
         ],
     },

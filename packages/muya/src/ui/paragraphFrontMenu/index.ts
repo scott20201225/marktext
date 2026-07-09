@@ -9,6 +9,7 @@ import type {
     ITaskListState,
     TState,
 } from '../../state/types';
+import { admonitionColor, admonitionIconNodes } from '../../state/admonition';
 import type { IQuickInsertMenuItem } from '../paragraphQuickInsertMenu/config';
 import Format from '../../block/base/format';
 import { replaceBlockByLabel } from '../../block/blockTransforms';
@@ -22,7 +23,45 @@ import BaseFloat from '../baseFloat';
 import { canTurnIntoMenu, FRONT_MENU } from './config';
 import './index.css';
 
-function renderIcon({ label, icon }: { label: string; icon: string }) {
+function renderAdmonitionIcon(admonitionType: NonNullable<IQuickInsertMenuItem['children'][number]['admonitionType']>) {
+    return h(
+        'i.icon.admonition-icon',
+        {
+            style: {
+                color: admonitionColor(admonitionType),
+            },
+        },
+        h(
+            'svg',
+            {
+                attrs: {
+                    viewBox: '0 0 24 24',
+                    'aria-hidden': 'true',
+                    focusable: 'false',
+                    fill: 'none',
+                    stroke: 'currentColor',
+                    'stroke-width': '1.9',
+                    'stroke-linecap': 'round',
+                    'stroke-linejoin': 'round',
+                },
+            },
+            admonitionIconNodes(admonitionType).map(node => h(node.tag, { attrs: node.attrs })),
+        ),
+    );
+}
+
+function renderIcon({
+    label,
+    icon,
+    admonitionType,
+}: {
+    label: string;
+    icon?: string;
+    admonitionType?: IQuickInsertMenuItem['children'][number]['admonitionType'];
+}) {
+    if (admonitionType)
+        return renderAdmonitionIcon(admonitionType);
+
     const iconSelector = label === 'diagram sequence'
         ? `i.icon.sequence-badged`
         : 'i.icon';

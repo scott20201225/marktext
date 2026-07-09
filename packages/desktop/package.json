@@ -1,6 +1,6 @@
 {
   "name": "marktext",
-  "version": "0.20.0-scott.5",
+  "version": "0.20.0-scott.6",
   "description": "MarkText",
   "main": "./out/main/index.js",
   "author": {
@@ -116,6 +116,12 @@
     "write-file-atomic": "^7.0.1"
   },
   "optionalDependencies": {
+    "@vscode/ripgrep-darwin-arm64": "1.18.0",
+    "@vscode/ripgrep-darwin-x64": "1.18.0",
+    "@vscode/ripgrep-linux-arm64": "1.18.0",
+    "@vscode/ripgrep-linux-x64": "1.18.0",
+    "@vscode/ripgrep-win32-arm64": "1.18.0",
+    "@vscode/ripgrep-win32-x64": "1.18.0",
     "native-keymap": "^3.3.9"
   },
   "devDependencies": {
