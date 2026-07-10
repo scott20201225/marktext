@@ -194,7 +194,7 @@ export const usePreferencesStore = defineStore('preferences', {
     listIndentation: 1,
     frontmatterType: '-',
     superSubScript: false,
-    footnote: false,
+    footnote: true,
     isHtmlEnabled: true,
     isGitlabCompatibilityEnabled: false,
     sequenceTheme: 'hand',

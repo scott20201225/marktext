@@ -17,6 +17,7 @@ import './index.css';
 
 const LEFT_OFFSET = 100;
 const TABLE_CORNER_GAP = 2;
+const FOOTNOTE_CHILD_INSET = 24;
 
 function defaultOptions() {
     return {
@@ -417,6 +418,29 @@ export class ParagraphFrontButton {
         };
     }
 
+    private _getFootnoteChildReference(block: Parent, inset = FOOTNOTE_CHILD_INSET) {
+        return {
+            getBoundingClientRect: () => {
+                const rect = block.domNode!.getBoundingClientRect();
+                const x = rect.left + inset;
+                const y = rect.top;
+                return {
+                    x,
+                    y,
+                    left: x,
+                    right: x,
+                    top: y,
+                    bottom: y,
+                    width: 0,
+                    height: 0,
+                    toJSON() {
+                        return this;
+                    },
+                } as DOMRect;
+            },
+        };
+    }
+
     show(block: Parent) {
         if (this._block && this._block === block)
             return;
@@ -438,8 +462,11 @@ export class ParagraphFrontButton {
         const isLooseList = isOrderOrBulletList(block) && block.meta.loose;
         const dynamicMainAxis = isLooseList ? paddingTop * 2 : paddingTop;
         const isTableBlock = block.blockName === 'table';
+        const isFootnoteChildBlock = block.parent?.blockName === 'footnote';
         const reference = isTableBlock
             ? this._getTableCornerReference(block)
+            : isFootnoteChildBlock
+                ? this._getFootnoteChildReference(block)
             : domNode!;
         const placementValue = isTableBlock ? 'top-end' : placement;
 

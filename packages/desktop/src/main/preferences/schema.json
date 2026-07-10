@@ -265,7 +265,7 @@
   "footnote": {
     "description": "Markdown-Enable pandoc's markdown extension footnote.",
     "type": "boolean",
-    "default": false
+    "default": true
   },
   "isHtmlEnabled": {
     "description": "Markdown-Enable HTML rendering",

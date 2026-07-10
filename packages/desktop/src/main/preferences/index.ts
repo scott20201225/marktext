@@ -51,6 +51,11 @@ class Preference extends TypedEmitter<PreferenceEvents> {
           if (store.get('startUpAction') === 'lastState') {
             store.set('startUpAction', 'openLastFolder')
           }
+        },
+        '0.20.0-scott.13': (store) => {
+          if (store.get('footnote') === false) {
+            store.set('footnote', true)
+          }
         }
       },
       beforeEachMigration: (_store, context) => {
