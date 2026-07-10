@@ -16,7 +16,7 @@ import type Content from '../../base/content';
 import type Parent from '../../base/parent';
 import type BulletList from '../../commonMark/bulletList';
 import type Paragraph from '../../commonMark/paragraph';
-import { HTML_TAGS, VOID_HTML_TAGS } from '../../../config';
+import { EVENT_KEYS, HTML_TAGS, VOID_HTML_TAGS } from '../../../config';
 import { tokenizer } from '../../../inlineRenderer/lexer';
 import { isListItemState, isTaskListItemState } from '../../../state/types';
 import { isKeyboardEvent, isLengthEven } from '../../../utils';
@@ -31,6 +31,7 @@ import { ScrollPage } from '../../scrollPage';
 // these three list kinds, which carry a `meta` field with the bullet/order
 // shape. Narrow once instead of casting per access.
 type TListBlock = BulletList | OrderList | TaskList;
+type TFootnoteBlock = Parent & { focusIdentifierAtEnd?: () => void };
 
 enum UnindentType {
     INDENT,
@@ -44,6 +45,16 @@ const CODE_BLOCK_REG = /(^ {0,3}`{3,})([^` ]*)/;
 const MATH_BLOCK_REG = /^\$\$/;
 // eslint-disable-next-line regexp/no-super-linear-backtracking
 const TABLE_BLOCK_REG = /^\|.*?(\\*)\|.*?(\\*)\|/;
+const FOOTNOTE_DEFINITION_REG = /^\[\^[^^[\]\s]*\]:/;
+const FOOTNOTE_DEFINITION_START_REG = /^\[\^/;
+
+interface IDefinitionMarkerBoundary {
+    markerStart: number;
+    labelStart: number;
+    labelEnd: number;
+    rightMarkerEnd: number;
+    contentStart: number;
+}
 
 type BlockConversion
     = | { kind: 'math' }
@@ -220,6 +231,11 @@ class ParagraphContent extends Format {
         const { start, end } = this.getCursor()!;
         const { eventCenter } = this.muya;
 
+        if (this._handleDefinitionBoundaryBackspace(event, start.offset, end.offset)) {
+            eventCenter.emit('content-change', { block: this });
+            return;
+        }
+
         if (start.offset !== 0 || end.offset !== 0) {
             super.backspaceHandler(event);
             eventCenter.emit('content-change', { block: this });
@@ -250,10 +266,49 @@ class ParagraphContent extends Format {
     }
 
     override inputHandler(event: Event) {
+        const isFootnote = this._paragraphParentType() === 'footnote'
+            || this._looksLikeFootnoteDefinition();
         super.inputHandler(event);
+        if (isFootnote)
+            this._normalizeFootnoteLineBreaks();
+
         const { eventCenter } = this.muya;
 
         eventCenter.emit('content-change', { block: this });
+    }
+
+    override clickHandler(event: Event): void {
+        super.clickHandler(event);
+        requestAnimationFrame(() => this._normalizeDefinitionMarkerCursor());
+    }
+
+    override arrowHandler(event: Event) {
+        if (this._handleDefinitionBoundaryArrow(event))
+            return;
+
+        if (
+            isKeyboardEvent(event)
+            && event.key === EVENT_KEYS.ArrowLeft
+            && this._paragraphParentType() === 'footnote'
+        ) {
+            const cursor = this.getCursor();
+            const footnote = this.parent?.parent as TFootnoteBlock | undefined;
+            if (
+                cursor
+                && cursor.start.offset === 0
+                && cursor.end.offset === 0
+                && !event.shiftKey
+                && footnote?.blockName === 'footnote'
+                && typeof footnote.focusIdentifierAtEnd === 'function'
+            ) {
+                event.preventDefault();
+                event.stopPropagation();
+                footnote.focusIdentifierAtEnd();
+                return;
+            }
+        }
+
+        super.arrowHandler(event);
     }
 
     private _enterConvert(event: KeyboardEvent) {
@@ -426,6 +481,27 @@ class ParagraphContent extends Format {
         (newNode.children.head as ParagraphContent).setCursor(0, 0, true);
     }
 
+    private _enterOutOfFootnote(event: KeyboardEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const footnote = this.parent?.parent;
+        if (!footnote?.parent)
+            return;
+
+        const paragraphState: IParagraphState = {
+            name: 'paragraph',
+            text: '',
+        };
+        const paragraphBlock = ScrollPage.loadBlock('paragraph').create(
+            this.muya,
+            paragraphState,
+        );
+
+        footnote.parent.insertAfter(paragraphBlock, footnote);
+        paragraphBlock.firstContentInDescendant()?.setCursor(0, 0, true);
+    }
+
     private _enterInListItem(event: KeyboardEvent) {
         event.preventDefault();
         event.stopPropagation();
@@ -553,6 +629,20 @@ class ParagraphContent extends Format {
         if (!isKeyboardEvent(event))
             return;
 
+        const type = this._paragraphParentType();
+
+        if (type === 'footnote' || this._isFootnoteDefinition()) {
+            if (event.shiftKey) {
+                event.preventDefault();
+                event.stopPropagation();
+                return;
+            }
+
+            return type === 'footnote'
+                ? this._enterOutOfFootnote(event)
+                : this._enterAfterFootnoteDefinition(event);
+        }
+
         if (event.shiftKey)
             return this.shiftEnterHandler(event);
 
@@ -564,8 +654,6 @@ class ParagraphContent extends Format {
         // HTML block).
         if (matchBlockConversion(this.text))
             return this._enterConvert(event);
-
-        const type = this._paragraphParentType();
 
         if (type === 'block-quote')
             this._enterInBlockQuote(event);
@@ -600,6 +688,206 @@ class ParagraphContent extends Format {
         }
 
         return type;
+    }
+
+    private _isFootnoteDefinition() {
+        return FOOTNOTE_DEFINITION_REG.test(this.text);
+    }
+
+    private _looksLikeFootnoteDefinition() {
+        return this._isFootnoteDefinition() || FOOTNOTE_DEFINITION_START_REG.test(this.text);
+    }
+
+    private _definitionMarkerBoundary(): IDefinitionMarkerBoundary | null {
+        const footnote = /^(\[\^)([^^[\]\s]*)(\]:[ \t]*)/.exec(this.text);
+        if (footnote) {
+            const markerStart = 0;
+            const labelStart = footnote[1].length;
+            const labelEnd = labelStart + footnote[2].length;
+
+            return {
+                markerStart,
+                labelStart,
+                labelEnd,
+                rightMarkerEnd: labelEnd + 2,
+                contentStart: labelEnd + footnote[3].length,
+            };
+        }
+
+        const reference = /^( {0,3})(\[)([^\]]*)(\]:[ \t]*)/.exec(this.text);
+        if (!reference)
+            return null;
+
+        const markerStart = reference[1].length;
+        const labelStart = markerStart + reference[2].length;
+        const labelEnd = labelStart + reference[3].length;
+
+        return {
+            markerStart,
+            labelStart,
+            labelEnd,
+            rightMarkerEnd: labelEnd + 2,
+            contentStart: labelEnd + reference[4].length,
+        };
+    }
+
+    private _normalizeDefinitionMarkerCursor() {
+        const cursor = this.getCursor();
+        if (!cursor || !cursor.isCollapsed)
+            return false;
+
+        const boundary = this._definitionMarkerBoundary();
+        if (!boundary)
+            return false;
+
+        const { markerStart, labelStart, labelEnd, rightMarkerEnd, contentStart } = boundary;
+        const offset = cursor.start.offset;
+
+        if (offset > markerStart && offset < labelStart) {
+            this.setCursor(labelStart, labelStart, true);
+            return true;
+        }
+
+        if (offset > labelEnd && offset <= rightMarkerEnd) {
+            this.setCursor(labelEnd, labelEnd, true);
+            return true;
+        }
+
+        if (offset > rightMarkerEnd && offset < contentStart) {
+            this.setCursor(contentStart, contentStart, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private _handleDefinitionBoundaryArrow(event: Event) {
+        if (!isKeyboardEvent(event) || event.shiftKey)
+            return false;
+
+        if (event.key !== EVENT_KEYS.ArrowLeft && event.key !== EVENT_KEYS.ArrowRight)
+            return false;
+
+        const cursor = this.getCursor();
+        if (!cursor || !cursor.isCollapsed)
+            return false;
+
+        const boundary = this._definitionMarkerBoundary();
+        if (!boundary)
+            return false;
+
+        const { markerStart, labelStart, labelEnd, rightMarkerEnd, contentStart } = boundary;
+        const offset = cursor.start.offset;
+
+        if (event.key === EVENT_KEYS.ArrowRight && offset >= markerStart && offset < labelStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.setCursor(labelStart, labelStart, true);
+            return true;
+        }
+
+        if (event.key === EVENT_KEYS.ArrowLeft && offset > markerStart && offset <= labelStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.setCursor(markerStart, markerStart, true);
+            return true;
+        }
+
+        if (event.key === EVENT_KEYS.ArrowRight && offset >= labelEnd && offset < contentStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.setCursor(contentStart, contentStart, true);
+            return true;
+        }
+
+        if (event.key === EVENT_KEYS.ArrowLeft && offset > labelEnd && offset <= contentStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.setCursor(labelEnd, labelEnd, true);
+            return true;
+        }
+
+        if (
+            (offset > markerStart && offset < labelStart)
+            || (offset > labelEnd && offset <= rightMarkerEnd)
+        ) {
+            return this._normalizeDefinitionMarkerCursor();
+        }
+
+        return false;
+    }
+
+    private _handleDefinitionBoundaryBackspace(event: Event, startOffset: number, endOffset: number) {
+        if (startOffset !== endOffset)
+            return false;
+
+        const boundary = this._definitionMarkerBoundary();
+        if (!boundary)
+            return false;
+
+        const { markerStart, labelStart, labelEnd, contentStart } = boundary;
+
+        if (startOffset > labelEnd && startOffset <= contentStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            this.setCursor(labelEnd, labelEnd, true);
+            return true;
+        }
+
+        if (startOffset === labelStart) {
+            event.preventDefault();
+            event.stopPropagation();
+            const prefix = this.text.slice(0, markerStart);
+            const label = this.text.slice(labelStart, labelEnd);
+            const content = this.text.slice(contentStart);
+            this.text = `${prefix}${label}${label && content ? ' ' : ''}${content}`;
+            this.setCursor(markerStart, markerStart, true);
+            return true;
+        }
+
+        return false;
+    }
+
+    private _normalizeFootnoteLineBreaks() {
+        if (!/[\r\n]/.test(this.text))
+            return;
+
+        const cursor = this.getCursor();
+        const oldText = this.text;
+        const normalize = (text: string) => text.replace(/[\r\n]+/g, ' ');
+        const normalizedText = normalize(oldText);
+
+        this.text = normalizedText;
+
+        if (!cursor) {
+            this.update();
+            return;
+        }
+
+        const startOffset = normalize(oldText.substring(0, cursor.start.offset)).length;
+        const endOffset = normalize(oldText.substring(0, cursor.end.offset)).length;
+        this.setCursor(startOffset, endOffset, true);
+    }
+
+    private _enterAfterFootnoteDefinition(event: KeyboardEvent) {
+        event.preventDefault();
+        event.stopPropagation();
+
+        const paragraph = this.parent;
+        if (!paragraph?.parent)
+            return;
+
+        const paragraphState: IParagraphState = {
+            name: 'paragraph',
+            text: '',
+        };
+        const paragraphBlock = ScrollPage.loadBlock('paragraph').create(
+            this.muya,
+            paragraphState,
+        );
+
+        paragraph.parent.insertAfter(paragraphBlock, paragraph);
+        paragraphBlock.firstContentInDescendant()?.setCursor(0, 0, true);
     }
 
     private _handleBackspaceInParagraph(this: ParagraphContent) {

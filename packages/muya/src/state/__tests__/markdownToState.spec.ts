@@ -268,23 +268,39 @@ describe('markdownToState — task list nesting (marktext 23435ce6)', () => {
         expect(secondTexts).toEqual(['zar', 'rar']);
     });
 
-    // The footnote extension (utils/marked/extensions/footnote.ts) emits a
-    // block-level `footnote` token when `footnote: true` is set. Make sure
-    // MarkdownToState lifts that into a `footnote` state instead of
-    // silently dropping it with an "Unknown type" warning.
-    it('converts block-level footnote tokens into footnote states', () => {
+    // Footnote definitions are stored like reference definitions: editable
+    // paragraph text. The inline renderer decorates the marker, and damaging
+    // the marker naturally turns it into plain text.
+    it('converts block-level footnote tokens into paragraph definition text', () => {
         const states = generate(
             `text[^1]
 
 [^1]: definition`,
             { footnote: true },
         );
-        const footnote = states.find(s => s.name === 'footnote');
-        expect(footnote, 'a footnote state should be emitted').toBeDefined();
-        expect(footnote!.meta!.identifier).toBe('1');
-        const firstChild = footnote!.children![0];
-        expect(firstChild.name).toBe('paragraph');
-        expect(firstChild.text).toBe('definition');
+        const footnoteDefinition = states.find((s): s is { name: 'paragraph'; text: string } => (
+            s.name === 'paragraph' && s.text.startsWith('[^1]:')
+        ));
+        expect(footnoteDefinition, 'a footnote definition paragraph should be emitted').toBeDefined();
+        expect(footnoteDefinition!.text).toBe('[^1]: definition');
+    });
+
+    it('keeps an empty reference definition editable as paragraph text', () => {
+        const states = generate('[]:\n', { footnote: true });
+
+        expect(states).toContainEqual({
+            name: 'paragraph',
+            text: '[]:',
+        });
+    });
+
+    it('keeps an empty footnote definition editable as footnote paragraph text', () => {
+        const states = generate('[^]:\n', { footnote: true });
+
+        expect(states).toContainEqual({
+            name: 'paragraph',
+            text: '[^]:',
+        });
     });
 
     it('round-trips a single-paragraph footnote through state', () => {

@@ -87,6 +87,27 @@ function consumeBeginRules(state: ILexState, beginRules: BeginRules) {
             break;
         }
     }
+    const footnoteDef = state.footnote ? beginRules.footnote_definition.exec(state.src) : null;
+    if (footnoteDef) {
+        const token = {
+            type: 'footnote_definition' as const,
+            parent: state.tokens,
+            leftMarker: footnoteDef[1] || '',
+            label: footnoteDef[2] || '',
+            rightMarker: footnoteDef[3] || '',
+            content: footnoteDef[4] || '',
+            raw: footnoteDef[0],
+            range: {
+                start: state.pos,
+                end: state.pos + footnoteDef[0].length,
+            },
+        };
+        state.tokens.push(token);
+        state.src = state.src.substring(footnoteDef[0].length);
+        state.pos = state.pos + footnoteDef[0].length;
+        return;
+    }
+
     const def = beginRules.reference_definition.exec(state.src);
     if (def && isLengthEven(def[3])) {
         const token = {

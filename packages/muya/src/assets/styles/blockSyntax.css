@@ -1062,23 +1062,26 @@ pre.mu-active.mu-fenced-code::after {
 .mu-container figure.mu-footnote > .mu-footnote-input {
     grid-column: 1;
 
-    min-width: 0;
+    display: inline-block;
+    min-width: 4ch;
     padding: 0;
+    outline: none;
 
     color: var(--editor-color-50);
     font-weight: 600;
     font-size: 1em;
     line-height: var(--mu-line-height, 1.6);
+    white-space: nowrap;
 
     font-family: inherit;
 }
 
 .mu-container figure.mu-footnote > .mu-footnote-input::before {
-    content: '[^';
+    content: none;
 }
 
 .mu-container figure.mu-footnote > .mu-footnote-input::after {
-    content: ']:';
+    content: none;
 }
 
 .mu-container figure.mu-footnote > :not(.mu-footnote-input):not(i.mu-footnote-backlink) {

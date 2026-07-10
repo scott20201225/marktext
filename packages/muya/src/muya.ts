@@ -753,10 +753,14 @@ export class Muya {
 
     private _nextFootnoteIdentifier(): string {
         const used = this._collectMarkdownMatches(/\[\^([^[\]\s]+)\]/g);
+        const baseIdentifier = 'note';
 
-        for (let index = 1; index < Number.MAX_SAFE_INTEGER; index++) {
-            const identifier = String(index);
-            if (!used.has(identifier.toLowerCase()))
+        if (!used.has(baseIdentifier))
+            return baseIdentifier;
+
+        for (let index = 2; index < Number.MAX_SAFE_INTEGER; index++) {
+            const identifier = `${baseIdentifier}-${index}`;
+            if (!used.has(identifier))
                 return identifier;
         }
 
@@ -841,20 +845,22 @@ export class Muya {
 
         const block = targetBlock ?? this._activeFormatBlock();
         const identifier = this._nextFootnoteIdentifier();
+        const footnoteText = `[^${identifier}]: `;
         const footnoteState = {
-            name: 'footnote' as const,
-            meta: { identifier },
-            children: [{ name: 'paragraph' as const, text: '' }],
+            name: 'paragraph' as const,
+            text: footnoteText,
         };
         const footnoteBlock = ScrollPage.loadBlock(footnoteState.name).create(this, footnoteState);
 
         const paragraph = this._paragraphContainerOf(block);
-        if (paragraph && this._isBlankParagraphContent(block))
+        if (paragraph && this._isBlankParagraphContent(block)) {
             paragraph.replaceWith(footnoteBlock);
-        else
+        }
+        else {
             scrollPage.append(footnoteBlock, 'user');
+        }
 
-        footnoteBlock.firstContentInDescendant()?.setCursor(0, 0, true);
+        footnoteBlock.firstContentInDescendant()?.setCursor(footnoteText.length, footnoteText.length, true);
     }
 
     insertReferenceLink(targetBlock?: Format | null) {

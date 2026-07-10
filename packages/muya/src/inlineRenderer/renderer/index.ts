@@ -17,6 +17,7 @@ import del from './del';
 import delEmStrongFac from './delEmStrongFactory';
 import em from './em';
 import emoji from './emoji';
+import footnoteDefinition from './footnoteDefinition';
 import footnoteIdentifier from './footnoteIdentifier';
 import hardLineBreak from './hardLineBreak';
 import header from './header';
@@ -71,6 +72,7 @@ const inlineSyntaxRenderer = {
     referenceLink,
     referenceImage,
     superSubScript,
+    footnoteDefinition,
     footnoteIdentifier,
 };
 

@@ -592,10 +592,21 @@ blockquote .mu-hide.mu-math > .mu-math-render {
     font-weight: 600;
 }
 
+.mu-reference-label:empty,
+.mu-reference-definition-url:empty,
+.mu-footnote-definition-content:empty {
+    display: inline-block;
+    min-width: 0.6ch;
+}
+
 .mu-reference-definition-url {
     color: var(--editor-color);
     text-decoration: underline;
     text-underline-offset: 0.08em;
+}
+
+.mu-footnote-definition-content {
+    color: var(--editor-color);
 }
 
 .mu-inline-footnote-identifier {

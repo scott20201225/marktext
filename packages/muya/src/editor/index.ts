@@ -297,9 +297,21 @@ export class Editor {
         const { domNode } = this._muya;
 
         const eventHandler = (event: Event) => {
+            // Live DOM selection can momentarily resolve to null on empty blocks
+            // (for example: Enter creates an empty paragraph, then the browser
+            // parks the caret on its container rather than the inner
+            // `.mu-content` span). Fall back to the cached text selection that
+            // `setCursor()` already wrote so the next key event still routes to
+            // the intended content block instead of becoming a no-op.
             const selectionResult = this.selection.getSelection();
-            const anchorBlock = selectionResult?.anchor.block;
-            const isSelectionInSameBlock = selectionResult?.isSelectionInSameBlock;
+            const anchorBlock = selectionResult
+                ? selectionResult.anchor.block
+                : this.selection.anchorBlock;
+            const isSelectionInSameBlock = selectionResult
+                ? selectionResult.isSelectionInSameBlock
+                : this.selection.isSelectionInSameBlock;
+            const anchor = selectionResult?.anchor ?? this.selection.anchor;
+            const focus = selectionResult?.focus ?? this.selection.focus;
             // Fix issue that language input can not get focus when it's empty(Firefox only)
             if (
                 event.type === 'click'
@@ -310,6 +322,16 @@ export class Editor {
             ) {
                 (getBlock(event.target) as Content | undefined)?.setCursor(0, 0, true);
                 return;
+            }
+
+            if (
+                !selectionResult
+                && anchorBlock
+                && isSelectionInSameBlock
+                && anchor
+                && focus
+            ) {
+                anchorBlock.setCursor(anchor.offset, focus.offset, true);
             }
 
             if (!isSelectionInSameBlock || !anchorBlock) {

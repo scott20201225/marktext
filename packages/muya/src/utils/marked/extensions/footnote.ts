@@ -17,10 +17,12 @@ interface IFootnoteRendererThis {
 //
 // The `(?<!\\)` lookbehind in front of the closing `]` lets users escape
 // the bracket — `[^foo\]: bar` stays a paragraph instead of becoming a
-// footnote with identifier `foo\`. The `:[\s\S]*?` after the marker uses
-// `*` (not `+`) so a bare `[^id]:` followed only by a newline is still
-// recognised as an empty footnote.
-const BLOCK_RULE = /^\[\^([^^[\]\s]+)(?<!\\)\]:([\s\S]*?)(?=\n *\n {0,3}[^ ]|$)/;
+// footnote with identifier `foo\`. Empty identifiers are still editable
+// footnote definitions, so `[^]:` must not fall through to a `[label]:` def
+// whose label is `^`. The `:[\s\S]*?` after the marker uses `*` (not `+`) so a
+// bare `[^id]:` followed only by a newline is still recognised as an empty
+// footnote.
+const BLOCK_RULE = /^\[\^([^^[\]\s]*)(?<!\\)\]:([\s\S]*?)(?=\n *\n {0,3}[^ ]|$)/;
 
 interface IFootnoteToken {
     type: 'footnote';
@@ -42,7 +44,7 @@ export default function footnoteExtension(): MarkedExtension {
                     // newline inside that slice — never when the slice merely
                     // begins with `[^`, because that would split paragraphs
                     // at inline footnote references like `Lorem [^1] ipsum`.
-                    const m = /\n\[\^[^^[\]\s]+(?<!\\)\]:/.exec(src);
+                    const m = /\n\[\^[^^[\]\s]*(?<!\\)\]:/.exec(src);
                     return m ? m.index + 1 : undefined;
                 },
                 tokenizer(src: string): IFootnoteToken | undefined {

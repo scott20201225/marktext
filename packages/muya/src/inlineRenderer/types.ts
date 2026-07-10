@@ -48,6 +48,7 @@ export interface ITokenRange {
 export type Token
     = | BeginRuleToken
         | ReferenceDefinitionToken
+        | FootnoteDefinitionToken
         | TextToken
         | BacklashToken
         | StrongEmToken
@@ -94,6 +95,14 @@ export type ReferenceDefinitionToken = IBaseToken & {
     titleMarker: string;
     title: string;
     rightTitleSpace: string;
+};
+
+export type FootnoteDefinitionToken = IBaseToken & {
+    type: 'footnote_definition';
+    leftMarker: string;
+    label: string;
+    rightMarker: string;
+    content: string;
 };
 
 export type TextToken = IBaseToken & {

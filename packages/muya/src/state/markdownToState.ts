@@ -63,6 +63,14 @@ function extractAdmonitionTokens(tokens: TBlockToken[]): {
     };
 }
 
+function flattenFootnoteDefinitionRaw(raw: string) {
+    return raw
+        .replace(/\r\n?/g, '\n')
+        .replace(/\n[ \t]{4}/g, ' ')
+        .replace(/\n+/g, ' ')
+        .replace(/[ \t]+$/g, '');
+}
+
 export class MarkdownToState {
     constructor(private _options: IMarkdownToStateOptions = DEFAULT_OPTIONS) {}
 
@@ -216,20 +224,15 @@ export class MarkdownToState {
             }
 
             case 'footnote': {
-                // The footnote extension (utils/marked/extensions/footnote.ts)
-                // emits a parent token whose `tokens` array holds nested
-                // block tokens. Mirror that into a `footnote` container
-                // state and recurse via tokens.unshift / block-end.
-                const { identifier } = token;
+                // Keep footnote definitions editable like reference
+                // definitions: a normal paragraph with raw Markdown text.
+                // The inline renderer decorates `[^id]: body`; if users damage
+                // the marker it naturally falls back to plain text.
                 state = {
-                    name: 'footnote' as const,
-                    meta: { identifier },
-                    children: [],
+                    name: 'paragraph' as const,
+                    text: flattenFootnoteDefinitionRaw(token.raw),
                 };
                 parentList[0].push(state);
-                parentList.unshift(state.children);
-                tokens.unshift({ type: 'block-end', tokenType: 'footnote' });
-                tokens.unshift(...(token.tokens as TBlockToken[]));
                 break;
             }
         }

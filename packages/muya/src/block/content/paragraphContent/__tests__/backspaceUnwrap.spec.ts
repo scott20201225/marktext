@@ -82,6 +82,37 @@ function backspaceAtStart(muya: Muya, content: Content): void {
     content.backspaceHandler(event);
 }
 
+function backspaceAtOffset(muya: Muya, content: Content, offset: number) {
+    muya.editor.activeContentBlock = content;
+    content.setCursor(offset, offset, true);
+    const event = {
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+        key: 'Backspace',
+    } as unknown as KeyboardEvent & {
+        preventDefault: ReturnType<typeof vi.fn>;
+        stopPropagation: ReturnType<typeof vi.fn>;
+    };
+    content.backspaceHandler(event);
+    return event;
+}
+
+function arrowAtOffset(muya: Muya, content: Content, offset: number, key: 'ArrowLeft' | 'ArrowRight') {
+    muya.editor.activeContentBlock = content;
+    content.setCursor(offset, offset, true);
+    const event = {
+        preventDefault: vi.fn(),
+        stopPropagation: vi.fn(),
+        key,
+        shiftKey: false,
+    } as unknown as KeyboardEvent & {
+        preventDefault: ReturnType<typeof vi.fn>;
+        stopPropagation: ReturnType<typeof vi.fn>;
+    };
+    content.arrowHandler(event);
+    return event;
+}
+
 function flush(): Promise<void> {
     return new Promise<void>(resolve => requestAnimationFrame(() => resolve()));
 }
@@ -278,5 +309,243 @@ describe('backspace at start-of-paragraph — footnote', () => {
         expect(children).toHaveLength(1);
         expect(children[0].name).toBe('paragraph');
         expect(children[0].text).toBe('alphabeta');
+    });
+
+    it('removes an empty second footnote paragraph created by Enter and returns to the first paragraph', async () => {
+        const muya = bootMuya({
+            json: [
+                {
+                    name: 'footnote',
+                    meta: { identifier: '1' },
+                    children: [{ name: 'paragraph', text: 'alpha' }],
+                },
+            ],
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const alpha = contentByText(muya, 'alpha');
+
+        muya.editor.activeContentBlock = alpha;
+        alpha.setCursor(alpha.text.length, alpha.text.length, true);
+        alpha.enterHandler({
+            preventDefault: vi.fn(),
+            stopPropagation: vi.fn(),
+            shiftKey: false,
+            key: 'Enter',
+        } as unknown as KeyboardEvent);
+
+        await flush();
+        const emptyLine = contentByText(muya, '');
+
+        backspaceAtStart(muya, emptyLine);
+
+        await flush();
+        const state = muya.getState();
+        expect(state).toHaveLength(1);
+        expect(state[0].name).toBe('footnote');
+        const children = (state[0] as { children: Array<{ name: string; text?: string }> }).children;
+        expect(children).toHaveLength(1);
+        expect(children[0].name).toBe('paragraph');
+        expect(children[0].text).toBe('alpha');
+
+        const first = contentByText(muya, 'alpha');
+        const cursor = first.getCursor();
+        expect(cursor).not.toBeNull();
+        expect(cursor!.start.offset).toBe(first.text.length);
+    });
+});
+
+describe('backspace in reference/footnote definition markers', () => {
+    it('jumps from after a reference definition marker into the link label', async () => {
+        const muya = bootMarkdown('[link]: https://example.com\n');
+        const content = contentByText(muya, '[link]: https://example.com');
+
+        const event = backspaceAtOffset(muya, content, '[link]: '.length);
+
+        await flush();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(content.text).toBe('[link]: https://example.com');
+        const cursor = content.getCursor();
+        expect(cursor?.start.offset).toBe('[link'.length);
+    });
+
+    it('deletes both reference marker halves when Backspace hits the opening marker', async () => {
+        const muya = bootMarkdown('[link]: https://example.com\n');
+        const content = contentByText(muya, '[link]: https://example.com');
+
+        const event = backspaceAtOffset(muya, content, 1);
+
+        await flush();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(content.text).toBe('link https://example.com');
+        expect(muya.getMarkdown()).toBe('link https://example.com\n');
+    });
+
+    it('jumps from after a footnote definition marker into the footnote name', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+
+        const event = backspaceAtOffset(muya, content, '[^note]: '.length);
+
+        await flush();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(content.text).toBe('[^note]: alpha');
+        const cursor = content.getCursor();
+        expect(cursor?.start.offset).toBe('[^note'.length);
+    });
+
+    it('deletes both footnote marker halves when Backspace hits the opening marker', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+
+        const event = backspaceAtOffset(muya, content, 2);
+
+        await flush();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(content.text).toBe('note alpha');
+        expect(muya.getMarkdown()).toBe('note alpha\n');
+    });
+
+    it('removes the closing half too when an empty footnote marker is deleted from the left side', async () => {
+        const muya = bootMuya({
+            markdown: '[^]: \n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^]:');
+
+        const event = backspaceAtOffset(muya, content, 2);
+
+        await flush();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(content.text).toBe('');
+        expect(muya.getMarkdown()).toBe('\n');
+    });
+});
+
+describe('arrow navigation in reference/footnote definition markers', () => {
+    it('skips the reference definition opening marker as one unit', async () => {
+        const muya = bootMarkdown('[link]: https://example.com\n');
+        const content = contentByText(muya, '[link]: https://example.com');
+
+        const right = arrowAtOffset(muya, content, 0, 'ArrowRight');
+        await flush();
+        expect(right.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(1);
+
+        const left = arrowAtOffset(muya, content, 1, 'ArrowLeft');
+        await flush();
+        expect(left.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(0);
+    });
+
+    it('skips the reference definition closing marker as one unit', async () => {
+        const muya = bootMarkdown('[link]: https://example.com\n');
+        const content = contentByText(muya, '[link]: https://example.com');
+        const labelEnd = '[link'.length;
+        const contentStart = '[link]: '.length;
+
+        const right = arrowAtOffset(muya, content, labelEnd, 'ArrowRight');
+        await flush();
+        expect(right.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(contentStart);
+
+        const left = arrowAtOffset(muya, content, contentStart, 'ArrowLeft');
+        await flush();
+        expect(left.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(labelEnd);
+    });
+
+    it('normalizes accidental caret positions inside the reference closing marker', async () => {
+        const muya = bootMarkdown('[link]: https://example.com\n');
+        const content = contentByText(muya, '[link]: https://example.com');
+        const labelEnd = '[link'.length;
+        const contentStart = '[link]: '.length;
+
+        arrowAtOffset(muya, content, labelEnd + 1, 'ArrowLeft');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(labelEnd);
+
+        arrowAtOffset(muya, content, labelEnd + 1, 'ArrowRight');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(contentStart);
+    });
+
+    it('skips the footnote definition opening marker as one unit', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+        const labelStart = '[^'.length;
+
+        const right = arrowAtOffset(muya, content, 0, 'ArrowRight');
+        await flush();
+        expect(right.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(labelStart);
+
+        const left = arrowAtOffset(muya, content, labelStart, 'ArrowLeft');
+        await flush();
+        expect(left.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(0);
+    });
+
+    it('normalizes accidental caret positions inside the footnote opening marker', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+        const labelStart = '[^'.length;
+
+        arrowAtOffset(muya, content, 1, 'ArrowLeft');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(0);
+
+        arrowAtOffset(muya, content, 1, 'ArrowRight');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(labelStart);
+    });
+
+    it('skips the footnote definition closing marker as one unit', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+        const labelEnd = '[^note'.length;
+        const contentStart = '[^note]: '.length;
+
+        const right = arrowAtOffset(muya, content, labelEnd, 'ArrowRight');
+        await flush();
+        expect(right.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(contentStart);
+
+        const left = arrowAtOffset(muya, content, contentStart, 'ArrowLeft');
+        await flush();
+        expect(left.preventDefault).toHaveBeenCalled();
+        expect(content.getCursor()?.start.offset).toBe(labelEnd);
+    });
+
+    it('normalizes accidental caret positions inside the footnote closing marker', async () => {
+        const muya = bootMuya({
+            markdown: '[^note]: alpha\n',
+            footnote: true,
+        } as ConstructorParameters<typeof Muya>[1]);
+        const content = contentByText(muya, '[^note]: alpha');
+        const labelEnd = '[^note'.length;
+        const contentStart = '[^note]: '.length;
+
+        arrowAtOffset(muya, content, labelEnd + 1, 'ArrowLeft');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(labelEnd);
+
+        arrowAtOffset(muya, content, labelEnd + 1, 'ArrowRight');
+        await flush();
+        expect(content.getCursor()?.start.offset).toBe(contentStart);
     });
 });

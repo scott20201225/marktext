@@ -178,6 +178,17 @@ At vero eos [^foo1]: et accusam.`);
         ]);
     });
 
+    it('empty footnote identifier is still a footnote definition', () => {
+        const tokens = parse(`foo[^]
+
+[^]:
+`);
+        expect(tokens).toEqual([
+            { type: 'paragraph', text: 'foo[^]' },
+            { type: 'footnote', identifier: '', children: [] },
+        ]);
+    });
+
     it('always reports footnote even if referenced identifier differs', () => {
         // Per pandoc spec an unreferenced footnote could be ignored, but marktext
         // kept reporting them so users can edit incomplete drafts. We keep that.

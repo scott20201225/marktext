@@ -37,10 +37,13 @@ afterEach(() => {
         delete (window as Partial<Window>).MUYA_VERSION;
 });
 
-function bootMuya(markdown: string): Muya {
+function bootMuya(
+    markdown: string,
+    options: Partial<ConstructorParameters<typeof Muya>[1]> = {},
+): Muya {
     const host = document.createElement('div');
     document.body.appendChild(host);
-    const muya = new Muya(host, { markdown } as ConstructorParameters<typeof Muya>[1]);
+    const muya = new Muya(host, { markdown, ...options } as ConstructorParameters<typeof Muya>[1]);
     muya.init();
     bootedHosts.push(muya.domNode);
     return muya;
@@ -67,15 +70,26 @@ function contentByText(muya: Muya, text: string): Content {
 
 // Land the caret at `offset` of the given content block (active block + cursor),
 // then route an Enter through its handler the way the keydown listener does.
-function enterAt(muya: Muya, content: Content, offset: number): { preventDefault: ReturnType<typeof vi.fn> } {
+function enterAt(
+    muya: Muya,
+    content: Content,
+    offset: number,
+    shiftKey = false,
+): {
+    preventDefault: ReturnType<typeof vi.fn>;
+    stopPropagation: ReturnType<typeof vi.fn>;
+} {
     muya.editor.activeContentBlock = content;
     content.setCursor(offset, offset, true);
     const event = {
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
-        shiftKey: false,
+        shiftKey,
         key: 'Enter',
-    } as unknown as KeyboardEvent & { preventDefault: ReturnType<typeof vi.fn> };
+    } as unknown as KeyboardEvent & {
+        preventDefault: ReturnType<typeof vi.fn>;
+        stopPropagation: ReturnType<typeof vi.fn>;
+    };
     content.enterHandler(event);
     return event;
 }
@@ -188,5 +202,66 @@ describe('enter at end-of-text — appends an empty paragraph with the caret in 
         const cursor = empty.getCursor();
         expect(cursor).not.toBeNull();
         expect(cursor!.start.offset).toBe(0);
+    });
+});
+
+describe('enter inside footnote — single-line definition behavior', () => {
+    it('plain Enter exits the footnote and inserts a blank paragraph after it', async () => {
+        const muya = bootMuya('[^note]: alpha\n', { footnote: true });
+        const content = contentByText(muya, '[^note]: alpha');
+
+        const event = enterAt(muya, content, content.text.length);
+
+        await flush();
+        const state = muya.getState();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(event.stopPropagation).toHaveBeenCalled();
+        expect(state.length).toBe(2);
+        expect(state[0].name).toBe('paragraph');
+        expect(blockText(state, 0)).toBe('[^note]: alpha');
+        expect(state[1].name).toBe('paragraph');
+        expect(blockText(state, 1)).toBe('');
+
+        const empty = contentByText(muya, '');
+        const cursor = empty.getCursor();
+        expect(cursor).not.toBeNull();
+        expect(cursor!.start.offset).toBe(0);
+    });
+
+    it('Shift+Enter is swallowed inside a footnote and does not add a line break', async () => {
+        const muya = bootMuya('[^note]: alpha\n', { footnote: true });
+        const content = contentByText(muya, '[^note]: alpha');
+
+        const event = enterAt(muya, content, content.text.length, true);
+
+        await flush();
+        const state = muya.getState();
+        expect(event.preventDefault).toHaveBeenCalled();
+        expect(event.stopPropagation).toHaveBeenCalled();
+        expect(state.length).toBe(1);
+        expect(state[0].name).toBe('paragraph');
+        expect(blockText(state, 0)).toBe('[^note]: alpha');
+    });
+
+    it('normalizes pasted line breaks inside a footnote to spaces', async () => {
+        const muya = bootMuya('[^note]: alpha\n', { footnote: true });
+        const content = contentByText(muya, '[^note]: alpha');
+
+        content.text = '[^note]: alpha\nbeta\r\ngamma';
+        content.setCursor(content.text.length, content.text.length, true);
+        content.inputHandler({
+            type: 'input',
+            inputType: 'insertFromPaste',
+            data: null,
+        } as unknown as InputEvent);
+
+        await flush();
+        const state = muya.getState();
+        expect(state[0].name).toBe('paragraph');
+        expect(blockText(state, 0)).toBe('[^note]: alpha beta gamma');
+
+        const cursor = content.getCursor();
+        expect(cursor).not.toBeNull();
+        expect(cursor!.start.offset).toBe('[^note]: alpha beta gamma'.length);
     });
 });

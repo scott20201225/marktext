@@ -6,7 +6,9 @@ export const beginRules = {
     header: /(^ {0,3}#{1,6}(\s+|$))/,
     reference_definition:
     // eslint-disable-next-line regexp/no-super-linear-backtracking, regexp/no-misleading-capturing-group
-    /^( {0,3}\[)([^\]]+?)(\\*)(\]: *)(<?)([^\s>]+)(>?)(?:( +)(["'(]?)([^\n"'()]+)\9)?( *)$/,
+    /^( {0,3}\[)([^\]]*?)(\\*)(\]:[ \t]*)(<?)([^\s>]*)(>?)(?:( +)(["'(]?)([^\n"'()]*)\9)?( *)$/,
+    footnote_definition:
+    /^(\[\^)([^^[\]\s]*)(\]:[ \t]*)([^\n]*)$/,
 
     // extra syntax (not belongs to GFM)
     multiple_math: /^(\$\$)$/,
