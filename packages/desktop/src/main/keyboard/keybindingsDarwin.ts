@@ -66,7 +66,9 @@ const keybindings: Map<string, string> = new Map([
   ['paragraph.loose-list-item', 'Command+Option+L'],
   ['paragraph.paragraph', 'Command+0'],
   ['paragraph.horizontal-line', 'Command+Option+-'],
+  ['paragraph.indent-list', 'Command+]'],
   ['paragraph.front-matter', 'Command+Option+Y'],
+  ['paragraph.outdent-list', 'Command+['],
 
   // Format menu
   ['format.strong', 'Command+B'],

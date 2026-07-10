@@ -48,12 +48,6 @@ const TASK_STATUS_MENU_IDS: readonly string[] = [
   'markTaskIncompleteMenuItem'
 ]
 
-const LIST_INDENTATION_MENU_IDS: readonly string[] = [
-  'listIndentationMenuItem',
-  'indentListMenuItem',
-  'outdentListMenuItem'
-]
-
 const ALERT_MENU_ID_BY_TYPE: Readonly<Record<string, string>> = Object.freeze({
   note: 'noteBlockMenuItem',
   tip: 'tipBlockMenuItem',
@@ -303,10 +297,12 @@ export const loadParagraphCommands = (commandManager: CommandManager): void => {
   commandManager.add(COMMANDS.PARAGRAPH_HEADING_5, heading5)
   commandManager.add(COMMANDS.PARAGRAPH_HEADING_6, heading6)
   commandManager.add(COMMANDS.PARAGRAPH_HORIZONTAL_LINE, horizontalLine)
+  commandManager.add(COMMANDS.PARAGRAPH_INDENT_LIST, indentList)
   commandManager.add(COMMANDS.PARAGRAPH_HTML_BLOCK, htmlBlock)
   commandManager.add(COMMANDS.PARAGRAPH_LOOSE_LIST_ITEM, looseListItem)
   commandManager.add(COMMANDS.PARAGRAPH_MATH_FORMULA, mathFormula)
   commandManager.add(COMMANDS.PARAGRAPH_ORDERED_LIST, orderedList)
+  commandManager.add(COMMANDS.PARAGRAPH_OUTDENT_LIST, outdentList)
   commandManager.add(COMMANDS.PARAGRAPH_PARAGRAPH, paragraph)
   commandManager.add(COMMANDS.PARAGRAPH_QUOTE_BLOCK, quoteBlock)
   commandManager.add(COMMANDS.PARAGRAPH_TABLE, table)
@@ -485,10 +481,7 @@ export const updateSelectionMenus = (
     setMultipleStatus(applicationMenu, ['looseListItemMenuItem'], false)
   }
 
-  const isListItem = !!affiliation.ul || !!affiliation.ol || !!affiliation.task
-  const enableListExtras = !isCodeFences && !isMultiline && isListItem
   const enableTaskStatus = !isCodeFences && !isMultiline && !!state.isTaskList
-  setMultipleStatus(applicationMenu, LIST_INDENTATION_MENU_IDS, enableListExtras)
   setMultipleStatus(applicationMenu, TASK_STATUS_MENU_IDS, enableTaskStatus)
 
   // Front matter may exist at most once per document; disable the menu item

@@ -76,12 +76,18 @@ function contentByText(muya: Muya, text: string): Content {
     return target;
 }
 
-// Land the caret at [start, end] of the given content block (active block +
-// cursor), then route a Tab through its handler the way the keydown listener
-// does.
-function tabAt(muya: Muya, content: Content, offset: number, shiftKey = false): void {
+// Land the caret / selection at [start, end] of the given content block
+// (active block + cursor), then route a Tab through its handler the way the
+// keydown listener does.
+function tabAt(
+    muya: Muya,
+    content: Content,
+    startOffset: number,
+    endOffset = startOffset,
+    shiftKey = false,
+): void {
     muya.editor.activeContentBlock = content;
-    content.setCursor(offset, offset, true);
+    content.setCursor(startOffset, endOffset, true);
     const event = {
         preventDefault: vi.fn(),
         stopPropagation: vi.fn(),
@@ -203,13 +209,42 @@ describe('paragraphContent.tabHandler — indent / unindent a list item', () => 
         expect(muya.getMarkdown()).toBe('- a\n  - b\n');
 
         const nestedB = contentByText(muya, 'b');
-        tabAt(muya, nestedB, 0, true);
+        tabAt(muya, nestedB, 0, 0, true);
         await flush();
 
         expect(muya.getMarkdown()).toBe('- a\n- b\n');
         const state = muya.getState();
         expect(state.length).toBe(1);
         expect(state[0].name).toBe('bullet-list');
+    });
+
+    it('tab and Shift+Tab preserve a single-line selection inside one list item', async() => {
+        const muya = bootMuya('- alpha\n- bravo\n');
+        const bravo = contentByText(muya, 'bravo');
+
+        tabAt(muya, bravo, 1, 4);
+
+        await flush();
+        expect(muya.getMarkdown()).toBe('- alpha\n  - bravo\n');
+
+        const nestedBravo = contentByText(muya, 'bravo');
+        const nestedCursor = nestedBravo.getCursor();
+        expect(nestedCursor).not.toBeNull();
+        expect(nestedCursor!.isCollapsed).toBe(false);
+        expect(nestedCursor!.start.offset).toBe(1);
+        expect(nestedCursor!.end.offset).toBe(4);
+
+        tabAt(muya, nestedBravo, 1, 4, true);
+
+        await flush();
+        expect(muya.getMarkdown()).toBe('- alpha\n- bravo\n');
+
+        const flatBravo = contentByText(muya, 'bravo');
+        const flatCursor = flatBravo.getCursor();
+        expect(flatCursor).not.toBeNull();
+        expect(flatCursor!.isCollapsed).toBe(false);
+        expect(flatCursor!.start.offset).toBe(1);
+        expect(flatCursor!.end.offset).toBe(4);
     });
 });
 

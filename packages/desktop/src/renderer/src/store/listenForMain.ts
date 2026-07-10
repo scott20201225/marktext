@@ -3,6 +3,16 @@ import bus from '../bus'
 import { useLayoutStore } from './layout'
 
 export const useListenForMainStore = defineStore('listenForMain', () => {
+  const FOCUS_RESTORE_PARAGRAPH_ACTIONS = new Set([
+    'list-indent',
+    'list-outdent'
+  ])
+
+  const restoreEditorFocusAndEmit = (channel: 'paragraph' | 'format', type: string): void => {
+    setTimeout(() => bus.emit('editor-focus'), 10)
+    setTimeout(() => bus.emit(channel, type), 150)
+  }
+
   function EDITOR_EDIT_ACTION(type: string): void {
     const layoutStore = useLayoutStore()
     if (type === 'findInFolder') {
@@ -39,7 +49,11 @@ export const useListenForMainStore = defineStore('listenForMain', () => {
     // guard. Restore the same shape; bus listeners that expect a payload get
     // the same `type` value (string at runtime per main process emitters).
     window.electron.ipcRenderer.on('mt::editor-paragraph-action', (_e, { type }) => {
-      bus.emit('paragraph', type)
+      if (FOCUS_RESTORE_PARAGRAPH_ACTIONS.has(type)) {
+        restoreEditorFocusAndEmit('paragraph', type)
+      } else {
+        bus.emit('paragraph', type)
+      }
     })
     window.electron.ipcRenderer.on('mt::editor-format-action', (_e, { type }) => {
       bus.emit('format', type)
@@ -50,6 +64,7 @@ export const useListenForMainStore = defineStore('listenForMain', () => {
     EDITOR_EDIT_ACTION,
     LISTEN_FOR_EDIT,
     LISTEN_FOR_SHOW_DIALOG,
-    LISTEN_FOR_PARAGRAPH_INLINE_STYLE
+    LISTEN_FOR_PARAGRAPH_INLINE_STYLE,
+    restoreEditorFocusAndEmit
   }
 })

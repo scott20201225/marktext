@@ -1010,7 +1010,8 @@ class ParagraphContent extends Format {
     }
 
     private _getUnindentType(): Nullable<UnindentType> {
-        if (!this.isCollapsed)
+        const cursor = this._getSingleLineListSelectionCursor();
+        if (!cursor)
             return null;
 
         const { parent } = this;
@@ -1029,6 +1030,18 @@ class ParagraphContent extends Format {
         return null;
     }
 
+    private _getSingleLineListSelectionCursor() {
+        const cursor = this.getCursor();
+        if (!cursor)
+            return null;
+
+        if (cursor.isCollapsed)
+            return cursor;
+
+        const selectedText = this.text.slice(cursor.start.offset, cursor.end.offset);
+        return /[\r\n]/.test(selectedText) ? null : cursor;
+    }
+
     private _canIndentListItem() {
         const { parent } = this;
         if (parent!.blockName !== 'paragraph' || !parent!.parent)
@@ -1044,10 +1057,12 @@ class ParagraphContent extends Format {
         if (
             (listItem.blockName !== 'list-item'
                 && listItem.blockName !== 'task-list-item')
-            || !this.isCollapsed
         ) {
             return false;
         }
+
+        if (!this._getSingleLineListSelectionCursor())
+            return false;
 
         return list && /ol|ul/.test(list.tagName) && listItem.prev;
     }

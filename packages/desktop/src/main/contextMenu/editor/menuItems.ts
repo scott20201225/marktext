@@ -3,6 +3,9 @@
 import { type BrowserWindow, type MenuItemConstructorOptions } from 'electron'
 import { t } from '../../i18n'
 
+const LIST_INDENT_ACCELERATOR = process.platform === 'darwin' ? 'Command+]' : 'Ctrl+]'
+const LIST_OUTDENT_ACCELERATOR = process.platform === 'darwin' ? 'Command+[' : 'Ctrl+['
+
 // Use function form to avoid calling the translation function during module load
 export const getCUT = (): MenuItemConstructorOptions => ({
   label: t('contextMenu.cut'),
@@ -108,6 +111,32 @@ export const getTaskList = (): MenuItemConstructorOptions => ({
   }
 })
 
+export const getIndentList = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.indent'),
+  id: 'contextIndentListMenuItem',
+  accelerator: LIST_INDENT_ACCELERATOR,
+  click(_menuItem, targetWindow) {
+    if (targetWindow) {
+      ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+        type: 'list-indent'
+      })
+    }
+  }
+})
+
+export const getOutdentList = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.outdent'),
+  id: 'contextOutdentListMenuItem',
+  accelerator: LIST_OUTDENT_ACCELERATOR,
+  click(_menuItem, targetWindow) {
+    if (targetWindow) {
+      ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+        type: 'list-outdent'
+      })
+    }
+  }
+})
+
 // Retained for backward compatibility
 export const CUT = getCUT()
 export const COPY = getCOPY()
@@ -120,6 +149,8 @@ export const INSERT_AFTER = getInsertAfter()
 export const ORDERED_LIST = getOrderedList()
 export const BULLET_LIST = getBulletList()
 export const TASK_LIST = getTaskList()
+export const INDENT_LIST = getIndentList()
+export const OUTDENT_LIST = getOutdentList()
 
 export const SEPARATOR: MenuItemConstructorOptions = {
   type: 'separator'

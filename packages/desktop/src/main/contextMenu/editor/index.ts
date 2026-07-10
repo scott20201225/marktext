@@ -11,7 +11,9 @@ import {
   getInsertAfter,
   getOrderedList,
   getBulletList,
-  getTaskList
+  getTaskList,
+  getIndentList,
+  getOutdentList
 } from './menuItems'
 import spellcheckMenuBuilder from './spellcheck'
 import { t } from '../../i18n'
@@ -46,9 +48,11 @@ type ContextMenuEvent = {
 }
 
 interface ParagraphContextState {
-  showOrderedList: boolean
-  showBulletList: boolean
-  showTaskList: boolean
+  canCreateOrderedList: boolean
+  canCreateBulletList: boolean
+  canCreateTaskList: boolean
+  inOrderedList: boolean
+  inBulletList: boolean
 }
 
 const COPY_RELATED_MENU_IDS = new Set([
@@ -59,14 +63,17 @@ const COPY_RELATED_MENU_IDS = new Set([
 ])
 
 const hasSelectedText = (selectionText: string): boolean => selectionText.trim().length > 0
+const hasLineBreak = (selectionText: string): boolean => /[\r\n]/.test(selectionText)
 
 const getParagraphContextState = (): ParagraphContextState => {
   const appMenu = Menu.getApplicationMenu()
   if (!appMenu) {
     return {
-      showOrderedList: false,
-      showBulletList: false,
-      showTaskList: false
+      canCreateOrderedList: false,
+      canCreateBulletList: false,
+      canCreateTaskList: false,
+      inOrderedList: false,
+      inBulletList: false
     }
   }
 
@@ -75,27 +82,42 @@ const getParagraphContextState = (): ParagraphContextState => {
   const taskListMenuItem = appMenu.getMenuItemById('taskListMenuItem')
 
   return {
-    showOrderedList: !!orderedListMenuItem?.enabled,
-    showBulletList: !!bulletListMenuItem?.enabled,
-    showTaskList: !!taskListMenuItem?.enabled
+    canCreateOrderedList: !!orderedListMenuItem?.enabled,
+    canCreateBulletList: !!bulletListMenuItem?.enabled,
+    canCreateTaskList: !!taskListMenuItem?.enabled,
+    inOrderedList: !!orderedListMenuItem?.checked,
+    inBulletList: !!bulletListMenuItem?.checked
   }
 }
 
 // Dynamically fetch menu items to ensure correct translation
 const getContextItems = (selectionText: string): MenuItemConstructorOptions[] => {
   const items: MenuItemConstructorOptions[] = [getInsertBefore(), getInsertAfter()]
+  const {
+    canCreateOrderedList,
+    canCreateBulletList,
+    canCreateTaskList,
+    inOrderedList,
+    inBulletList
+  } = getParagraphContextState()
   const shouldShowParagraphListActions = hasSelectedText(selectionText)
+  const shouldShowListIndentation =
+    (inOrderedList || inBulletList) &&
+    (!hasSelectedText(selectionText) || !hasLineBreak(selectionText))
 
   if (shouldShowParagraphListActions) {
-    const { showOrderedList, showBulletList, showTaskList } = getParagraphContextState()
     const paragraphItems: MenuItemConstructorOptions[] = []
-    if (showOrderedList) paragraphItems.push(getOrderedList())
-    if (showBulletList) paragraphItems.push(getBulletList())
-    if (showTaskList) paragraphItems.push(getTaskList())
+    if (canCreateOrderedList) paragraphItems.push(getOrderedList())
+    if (canCreateBulletList) paragraphItems.push(getBulletList())
+    if (canCreateTaskList) paragraphItems.push(getTaskList())
 
     if (paragraphItems.length > 0) {
       items.push(SEPARATOR, ...paragraphItems)
     }
+  }
+
+  if (shouldShowListIndentation) {
+    items.push(SEPARATOR, getIndentList(), getOutdentList())
   }
 
   items.push(

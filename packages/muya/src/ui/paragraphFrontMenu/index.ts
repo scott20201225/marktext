@@ -95,6 +95,12 @@ const defaultOptions = {
     showArrow: false,
 };
 
+const FRONT_MENU_LIST_COMMANDS = Object.freeze({
+    'order-list': 'ol-order',
+    'bullet-list': 'ul-bullet',
+    'task-list': 'ul-task',
+} as const);
+
 export class ParagraphFrontMenu extends BaseFloat {
     static pluginName = 'frontMenu';
     public override capturesContentKeydown = true;
@@ -244,6 +250,31 @@ export class ParagraphFrontMenu extends BaseFloat {
         this._block = null;
         if (!block?.parent)
             return;
+
+        const selectionStore = this.muya.editor.selection;
+        const selection = selectionStore.getSelection();
+        const cachedCrossBlockSelection = !!selectionStore.anchorBlock
+            && !!selectionStore.focusBlock
+            && selectionStore.anchorBlock !== selectionStore.focusBlock;
+        const paragraphCommand = FRONT_MENU_LIST_COMMANDS[
+            label as keyof typeof FRONT_MENU_LIST_COMMANDS
+        ];
+
+        if (
+            paragraphCommand
+            && (
+                cachedCrossBlockSelection
+                || (
+                    !!selection
+                    && !selection.isCollapsed
+                    && !selection.isSelectionInSameBlock
+                )
+            )
+        ) {
+            this.muya.updateParagraph(paragraphCommand);
+            setTimeout(this.hide.bind(this));
+            return;
+        }
 
         const oldState = block.getState();
 

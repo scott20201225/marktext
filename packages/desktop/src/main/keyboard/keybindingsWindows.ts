@@ -69,7 +69,9 @@ const keybindings: Map<string, string> = new Map([
   ['paragraph.loose-list-item', 'Ctrl+Alt+L'],
   ['paragraph.paragraph', 'Ctrl+Shift+0'],
   ['paragraph.horizontal-line', 'Ctrl+Shift+U'],
+  ['paragraph.indent-list', 'Ctrl+]'],
   ['paragraph.front-matter', 'Ctrl+Alt+Y'],
+  ['paragraph.outdent-list', 'Ctrl+['],
 
   // Format menu
   ['format.strong', 'Ctrl+B'],

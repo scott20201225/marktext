@@ -46,6 +46,17 @@ function firstOutmostBlock(muya: Muya): Parent {
     return content.outMostBlock as Parent;
 }
 
+function selectFirstTwoBlocks(muya: Muya) {
+    const scrollPage = muya.editor.scrollPage!;
+    const first = scrollPage.firstContentInDescendant()!;
+    const second = (scrollPage.firstChild!.next as Parent).firstContentInDescendant()!;
+    muya.editor.activeContentBlock = second;
+    muya.editor.selection.setSelection(
+        { offset: 0, block: first, path: first.path },
+        { offset: second.text.length, block: second, path: second.path },
+    );
+}
+
 describe('muya.resetToParagraph(block)', () => {
     it('unwraps a bullet list into separate paragraphs, preserving every item', async () => {
         const muya = bootMuya('- one\n- two\n- three\n');
@@ -94,6 +105,48 @@ describe('paragraph front menu — clicking the active list type unwraps the lis
             const state = muya.getState();
             expect(state.length).toBe(3);
             expect(state.every(b => b.name === 'paragraph')).toBe(true);
+        });
+    });
+
+    it('uses the live multi-block selection for list actions instead of only the clicked line', async () => {
+        const muya = bootMuya('alpha\n\nbravo\n');
+        selectFirstTwoBlocks(muya);
+
+        const menu = new ParagraphFrontMenu(muya, {});
+        (menu as unknown as { _block: Parent })._block = firstOutmostBlock(muya);
+        menu.selectItem(new Event('click'), { label: 'bullet-list' });
+
+        await vi.waitFor(() => {
+            const state = muya.getState();
+            expect(state.length).toBe(1);
+            expect(state[0].name).toBe('bullet-list');
+            expect(state[0].children).toHaveLength(2);
+        });
+    });
+
+    it('still uses the cached multi-block selection after the live DOM selection collapses on button click', async() => {
+        const muya = bootMuya('alpha\n\nbravo\n');
+        selectFirstTwoBlocks(muya);
+
+        const first = muya.editor.scrollPage!.firstContentInDescendant()!;
+        vi.spyOn(muya.editor.selection, 'getSelection').mockReturnValue({
+            anchor: { offset: 0, block: first, path: first.path },
+            focus: { offset: 0, block: first, path: first.path },
+            isCollapsed: true,
+            isSelectionInSameBlock: true,
+            direction: 'none' as never,
+            type: 'cursor' as never,
+        });
+
+        const menu = new ParagraphFrontMenu(muya, {});
+        (menu as unknown as { _block: Parent })._block = firstOutmostBlock(muya);
+        menu.selectItem(new Event('click'), { label: 'bullet-list' });
+
+        await vi.waitFor(() => {
+            const state = muya.getState();
+            expect(state.length).toBe(1);
+            expect(state[0].name).toBe('bullet-list');
+            expect(state[0].children).toHaveLength(2);
         });
     });
 });

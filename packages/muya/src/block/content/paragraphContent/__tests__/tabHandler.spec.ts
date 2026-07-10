@@ -105,3 +105,57 @@ describe('paragraphContent.tabHandler — Shift+Tab unindent must not fall throu
         expect(fakeThis.insertTab).not.toHaveBeenCalled();
     });
 });
+
+describe('paragraphContent list indentation gating', () => {
+    const canIndentListItem = (
+        ParagraphContent.prototype as unknown as {
+            _canIndentListItem: (this: unknown) => boolean;
+            _getSingleLineListSelectionCursor: (this: unknown) => unknown;
+        }
+    )._canIndentListItem;
+
+    const singleLineSelectionCursor = (
+        ParagraphContent.prototype as unknown as {
+            _getSingleLineListSelectionCursor: (this: unknown) => unknown;
+        }
+    )._getSingleLineListSelectionCursor;
+
+    const makeListParents = () => {
+        const list = { tagName: 'ul' };
+        const listItem = { blockName: 'list-item', parent: list, prev: {} };
+        const paragraph = { blockName: 'paragraph', parent: listItem };
+        return { paragraph };
+    };
+
+    it('allows indent for a non-collapsed single-line selection inside one list item', () => {
+        const { paragraph } = makeListParents();
+        const fakeThis = {
+            text: 'bravo',
+            parent: paragraph,
+            getCursor: vi.fn(() => ({
+                start: { offset: 1 },
+                end: { offset: 4 },
+                isCollapsed: false,
+            })),
+            _getSingleLineListSelectionCursor: singleLineSelectionCursor,
+        };
+
+        expect(canIndentListItem.call(fakeThis)).toBeTruthy();
+    });
+
+    it('refuses indent when the selection text contains a line break', () => {
+        const { paragraph } = makeListParents();
+        const fakeThis = {
+            text: 'line one\nline two',
+            parent: paragraph,
+            getCursor: vi.fn(() => ({
+                start: { offset: 0 },
+                end: { offset: 10 },
+                isCollapsed: false,
+            })),
+            _getSingleLineListSelectionCursor: singleLineSelectionCursor,
+        };
+
+        expect(canIndentListItem.call(fakeThis)).toBe(false);
+    });
+});

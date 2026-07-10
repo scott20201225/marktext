@@ -342,26 +342,6 @@ export default function(keybindings: Keybindings): MenuItemConstructorOptions {
         ]
       },
       {
-        id: 'listIndentationMenuItem',
-        label: t('menu.paragraph.listIndentation'),
-        submenu: [
-          {
-            id: 'indentListMenuItem',
-            label: t('menu.paragraph.indent'),
-            click(_menuItem, focusedWindow) {
-              actions.indentList(focusedWindow as BrowserWindow | undefined)
-            }
-          },
-          {
-            id: 'outdentListMenuItem',
-            label: t('menu.paragraph.outdent'),
-            click(_menuItem, focusedWindow) {
-              actions.outdentList(focusedWindow as BrowserWindow | undefined)
-            }
-          }
-        ]
-      },
-      {
         id: 'linkReferenceMenuItem',
         label: t('menu.paragraph.linkReference'),
         click(_menuItem, focusedWindow) {
