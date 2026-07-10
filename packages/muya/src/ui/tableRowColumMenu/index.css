@@ -44,6 +44,14 @@
     content: '';
 }
 
+.mu-table-bar-tools ul.no-group-separators li.item[data-label='remove'] {
+    margin-top: 0;
+}
+
+.mu-table-bar-tools ul.no-group-separators li.item[data-label='remove']::before {
+    display: none;
+}
+
 .mu-table-bar-tools li.item:hover {
     background-color: var(--float-hover-color);
 }

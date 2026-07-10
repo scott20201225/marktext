@@ -3,6 +3,7 @@ import type TableBodyCell from '../../block/gfm/table/cell';
 
 import type { Muya } from '../../index';
 import type { MenuItem } from './config';
+import { isWin } from '../../config';
 import { h, patch } from '../../utils/snabbdom';
 import BaseFloat from '../baseFloat';
 import { resolveTableCellContext } from '../tableContext';
@@ -100,7 +101,15 @@ export class TableRowColumMenu extends BaseFloat {
             );
         });
 
-        const vnode = h('ul', children);
+        const vnode = h(
+            'ul',
+            {
+                class: {
+                    'no-group-separators': isWin,
+                },
+            },
+            children,
+        );
 
         if (oldVNode)
             patch(oldVNode, vnode);
