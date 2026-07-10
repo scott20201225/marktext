@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { compactMenuTemplate } from 'main_renderer/ipc/menuTemplate'
+import { compactMenuTemplate, menuToTemplate } from 'main_renderer/ipc/menuTemplate'
 
 describe('compactMenuTemplate', () => {
   it('removes hidden submenu items and collapses leftover separators', () => {
@@ -52,5 +52,94 @@ describe('compactMenuTemplate', () => {
     expect(template[0]?.label).toBe('A')
     expect(template[1]?.type).toBe('separator')
     expect(template[2]?.submenu).toEqual([{ label: 'B' }])
+  })
+
+  it('clones runtime menus into a compact template for Windows menu refreshes', () => {
+    const runtimeMenu = {
+      items: [
+        {
+          id: 'tableSubmenuMenuItem',
+          label: 'Table',
+          type: 'submenu',
+          role: undefined,
+          accelerator: '',
+          enabled: true,
+          visible: true,
+          checked: false,
+          registerAccelerator: false,
+          submenu: {
+            items: [
+              {
+                id: 'insertTableMenuItem',
+                label: 'Insert table',
+                type: 'normal',
+                role: undefined,
+                accelerator: 'Ctrl+Shift+T',
+                enabled: true,
+                visible: true,
+                checked: false,
+                registerAccelerator: false
+              },
+              {
+                id: 'tableRowSeparator',
+                label: '',
+                type: 'separator',
+                role: undefined,
+                accelerator: '',
+                enabled: true,
+                visible: false,
+                checked: false,
+                registerAccelerator: false
+              },
+              {
+                id: 'tableInsertRowAboveMenuItem',
+                label: 'Insert row above',
+                type: 'normal',
+                role: undefined,
+                accelerator: '',
+                enabled: false,
+                visible: false,
+                checked: false,
+                registerAccelerator: false
+              },
+              {
+                id: 'tableColumnSeparator',
+                label: '',
+                type: 'separator',
+                role: undefined,
+                accelerator: '',
+                enabled: true,
+                visible: false,
+                checked: false,
+                registerAccelerator: false
+              },
+              {
+                id: 'tableDeleteSeparator',
+                label: '',
+                type: 'separator',
+                role: undefined,
+                accelerator: '',
+                enabled: true,
+                visible: false,
+                checked: false,
+                registerAccelerator: false
+              }
+            ]
+          }
+        }
+      ]
+    }
+
+    const template = menuToTemplate(runtimeMenu as never)
+
+    expect(template).toHaveLength(1)
+    expect(template[0]?.id).toBe('tableSubmenuMenuItem')
+    expect(template[0]?.submenu).toEqual([
+      expect.objectContaining({
+        id: 'insertTableMenuItem',
+        label: 'Insert table',
+        accelerator: 'Ctrl+Shift+T'
+      })
+    ])
   })
 })

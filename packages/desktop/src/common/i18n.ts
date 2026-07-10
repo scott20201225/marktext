@@ -20,20 +20,20 @@ function loadTranslations(language: string): Translations | null {
   try {
     // Used in both main and preload processes, so we can't lean on
     // `global.__static`, which is main-only.
-    // In development, always prefer the raw locale JSON so freshly added menu
-    // keys appear immediately during `pnpm run dev` instead of being masked by
-    // stale tracked `.min.json` bundles. Production still consumes the
-    // minified artifacts from app resources.
-    let localePath: string
-    if (process.env.NODE_ENV === 'development' || process.env.PERF_TESTING === 'true') {
-      const minPath = path.join(process.cwd(), 'static', 'locales', `${language}.min.json`)
-      const rawPath = path.join(process.cwd(), 'static', 'locales', `${language}.json`)
-      localePath = fs.existsSync(rawPath) ? rawPath : minPath
-    } else {
-      localePath = path.join(process.resourcesPath, 'static', 'locales', `${language}.min.json`)
-    }
+    // Prefer repo-local locale files whenever the app is launched from a
+    // source checkout (for example `electron.cmd .` against packages/desktop),
+    // even if NODE_ENV is "production". Packaged apps still fall back to the
+    // resources directory.
+    const localeCandidates = [
+      path.join(process.cwd(), 'static', 'locales', `${language}.json`),
+      path.join(process.cwd(), 'static', 'locales', `${language}.min.json`),
+      process.resourcesPath
+        ? path.join(process.resourcesPath, 'static', 'locales', `${language}.min.json`)
+        : null
+    ].filter((candidate): candidate is string => !!candidate)
 
-    if (!fs.existsSync(localePath)) {
+    const localePath = localeCandidates.find((candidate) => fs.existsSync(candidate))
+    if (!localePath) {
       throw new Error(`Translation file not found for language: ${language}`)
     }
 

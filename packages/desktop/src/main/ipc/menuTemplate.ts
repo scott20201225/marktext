@@ -1,4 +1,9 @@
-import type { MenuItemConstructorOptions } from 'electron'
+import type {
+  BrowserWindow,
+  Menu,
+  MenuItem,
+  MenuItemConstructorOptions
+} from 'electron'
 
 const isSeparator = (item: MenuItemConstructorOptions | undefined): boolean =>
   item?.type === 'separator'
@@ -42,3 +47,36 @@ export const compactMenuTemplate = (
 
   return compacted
 }
+
+const cloneMenuItemToTemplate = (
+  item: MenuItem,
+  fallbackWindow?: BrowserWindow | null
+): MenuItemConstructorOptions => {
+  const submenu = item.submenu ? menuToTemplate(item.submenu, fallbackWindow) : undefined
+  const cloned: MenuItemConstructorOptions = {
+    id: item.id || undefined,
+    label: item.label,
+    type: item.type,
+    role: item.role,
+    accelerator: item.accelerator || undefined,
+    enabled: item.enabled,
+    visible: item.visible,
+    checked: item.checked,
+    registerAccelerator: item.registerAccelerator,
+    submenu
+  }
+
+  if (!item.role && typeof item.click === 'function') {
+    cloned.click = (menuItem, focusedWindow, event) => {
+      item.click(menuItem, focusedWindow ?? fallbackWindow ?? undefined, event)
+    }
+  }
+
+  return cloned
+}
+
+export const menuToTemplate = (
+  menu: Menu,
+  fallbackWindow?: BrowserWindow | null
+): MenuItemConstructorOptions[] =>
+  compactMenuTemplate(menu.items.map((item) => cloneMenuItemToTemplate(item, fallbackWindow)))

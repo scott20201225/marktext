@@ -11,6 +11,7 @@ import { updateSelectionMenus, type SelectionState } from '../menu/actions/parag
 import { onInternalChannel } from '../utils/internalIpc'
 import { viewLayoutChanged } from '../menu/actions/view'
 import configureMenu, { configSettingMenu } from '../menu/templates'
+import { menuToTemplate } from '../ipc/menuTemplate'
 import { setLanguage } from '../i18n.js'
 import type Preference from '../preferences'
 import type Keybindings from '../keyboard/shortcutHandler'
@@ -397,13 +398,14 @@ class AppMenu {
     const menus = this.getWindowMenuById(windowId)
     const menu = menus.getMenuItemById('alwaysOnTopMenuItem')
     if (menu) menu.checked = flag
+    this._refreshActiveApplicationMenu(windowId)
   }
 
   /**
    * Update theme menu state across editor menus.
    */
   updateThemeMenu = ({ theme, followSystemTheme }: ThemeMenuChange = {}): void => {
-    this.windowMenus.forEach((value) => {
+    this.windowMenus.forEach((value, windowId) => {
       const { menu, type } = value
       if (type !== MenuType.EDITOR || !menu) {
         return
@@ -425,6 +427,7 @@ class AppMenu {
           item.checked = true
         }
       })
+      this._refreshActiveApplicationMenu(windowId)
     })
   }
 
@@ -432,7 +435,7 @@ class AppMenu {
    * Update all auto save entries from editor menus to the given state.
    */
   updateAutoSaveMenu = (autoSave: boolean): void => {
-    this.windowMenus.forEach((value) => {
+    this.windowMenus.forEach((value, windowId) => {
       const { menu, type } = value
       if (type !== MenuType.EDITOR || !menu) {
         return
@@ -443,6 +446,7 @@ class AppMenu {
         return
       }
       autoSaveMenu.checked = autoSave
+      this._refreshActiveApplicationMenu(windowId)
     })
   }
 
@@ -472,9 +476,22 @@ class AppMenu {
       // WORKAROUND for Electron#16521: We cannot hide the (application) menu on Linux.
       const dummyMenu = Menu.buildFromTemplate([])
       Menu.setApplicationMenu(dummyMenu)
+    } else if (isWindows && menu) {
+      // Electron's native Windows menu bar can leave visible separator rows
+      // behind when submenu items are only toggled via `item.visible = false`.
+      // Keep the full runtime menu as our canonical mutable source, but hand
+      // Windows a freshly cloned/compacted menu surface each time we refresh it.
+      Menu.setApplicationMenu(Menu.buildFromTemplate(menuToTemplate(menu)))
     } else {
       Menu.setApplicationMenu(menu)
     }
+  }
+
+  _refreshActiveApplicationMenu(windowId: number): void {
+    if (!isWindows || this.activeWindowId !== windowId || !this.has(windowId)) {
+      return
+    }
+    this._setApplicationMenu(this.getWindowMenuById(windowId))
   }
 
   /**
@@ -505,6 +522,7 @@ class AppMenu {
           return
         }
         updateFormatMenu(this.getWindowMenuById(windowId), formats)
+        this._refreshActiveApplicationMenu(windowId)
       }
     )
     ipcMain.on('mt::update-sidebar-menu', (_e, windowId: number, value: unknown) => {
@@ -513,6 +531,7 @@ class AppMenu {
         return
       }
       updateSidebarMenu(this.getWindowMenuById(windowId), value)
+      this._refreshActiveApplicationMenu(windowId)
     })
     ipcMain.on(
       'mt::view-layout-changed',
@@ -522,6 +541,7 @@ class AppMenu {
           return
         }
         viewLayoutChanged(this.getWindowMenuById(windowId), viewSettings)
+        this._refreshActiveApplicationMenu(windowId)
       }
     )
     ipcMain.on('mt::editor-selection-changed', (_e, windowId: number, changes: SelectionState) => {
@@ -530,6 +550,7 @@ class AppMenu {
         return
       }
       updateSelectionMenus(this.getWindowMenuById(windowId), changes)
+      this._refreshActiveApplicationMenu(windowId)
     })
 
     // In source-code mode the Paragraph and Format commands act on the hidden
@@ -542,6 +563,7 @@ class AppMenu {
         const entry = menu.getMenuItemById(id)
         entry?.submenu?.items.forEach((item) => (item.enabled = enabled))
       }
+      this._refreshActiveApplicationMenu(windowId)
     })
 
     onInternalChannel('menu-add-recently-used', (pathname: string) => {

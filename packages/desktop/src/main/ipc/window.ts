@@ -4,12 +4,11 @@ import {
   MenuItem,
   ipcMain,
   type IpcMainEvent,
-  type WebContents,
-  type MenuItemConstructorOptions
+  type WebContents
 } from 'electron'
 import log from 'electron-log'
 import type { MenuTemplate, MenuTemplateItem, MenuPopupPosition } from '@shared/types/menu'
-import { compactMenuTemplate } from './menuTemplate'
+import { menuToTemplate } from './menuTemplate'
 
 const windowFromEvent = (event: IpcMainEvent): BrowserWindow | null =>
   BrowserWindow.fromWebContents(event.sender)
@@ -47,37 +46,6 @@ const buildMenu = (template: MenuTemplate | undefined, windowId: number): Menu =
     )
   }
   return menu
-}
-
-const toPopupTemplate = (
-  menu: Menu,
-  fallbackWindow: BrowserWindow
-): MenuItemConstructorOptions[] => {
-  const items = menu.items.map((item): MenuItemConstructorOptions => {
-    const submenu = item.submenu ? toPopupTemplate(item.submenu, fallbackWindow) : undefined
-    const cloned: MenuItemConstructorOptions = {
-      id: item.id || undefined,
-      label: item.label,
-      type: item.type,
-      role: item.role,
-      accelerator: item.accelerator || undefined,
-      enabled: item.enabled,
-      visible: item.visible,
-      checked: item.checked,
-      registerAccelerator: item.registerAccelerator,
-      submenu
-    }
-
-    if (!item.role && typeof item.click === 'function') {
-      cloned.click = (menuItem, focusedWindow, event) => {
-        item.click(menuItem, focusedWindow ?? fallbackWindow, event)
-      }
-    }
-
-    return cloned
-  })
-
-  return compactMenuTemplate(items)
 }
 
 export const registerWindowHandlers = (): void => {
@@ -156,7 +124,7 @@ export const registerWindowHandlers = (): void => {
       const appMenu = Menu.getApplicationMenu()
       if (!appMenu) return
       const popupMenu = process.platform === 'win32'
-        ? Menu.buildFromTemplate(toPopupTemplate(appMenu, win))
+        ? Menu.buildFromTemplate(menuToTemplate(appMenu, win))
         : appMenu
       popupMenu.popup({ window: win, x: position?.x, y: position?.y })
     } catch (err) {
