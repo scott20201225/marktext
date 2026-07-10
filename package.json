@@ -1,6 +1,6 @@
 {
   "name": "marktext-monorepo",
-  "version": "0.20.0-scott.11",
+  "version": "0.20.0-scott.12",
   "description": "MarkText monorepo root",
   "private": true,
   "homepage": "https://github.com/marktext/marktext",
