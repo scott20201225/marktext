@@ -4,6 +4,8 @@ import type { BrowserWindowConstructorOptions } from 'electron'
 export const isOsx: boolean = process.platform === 'darwin'
 export const isWindows: boolean = process.platform === 'win32'
 export const isLinux: boolean = process.platform === 'linux'
+// Keep in sync with packages/desktop/electron-builder.yml -> appId.
+export const WINDOWS_APP_USER_MODEL_ID = 'com.github.marktext.marktext'
 
 export const editorWinOptions: Readonly<BrowserWindowConstructorOptions> = Object.freeze({
   minWidth: 550,

@@ -8,6 +8,7 @@ import cli from './cli'
 import setupExceptionHandler, { initExceptionLogger } from './exceptionHandler'
 import setupEnvironment from './app/env'
 import type { AppEnvironment } from './app/env'
+import { WINDOWS_APP_USER_MODEL_ID } from './config'
 import { getLogLevel } from './utils'
 import Accessor from './app/accessor'
 import App from './app'
@@ -83,7 +84,7 @@ if (!process.mas && process.env.NODE_ENV !== 'development') {
 registerSandboxIpcHandlers()
 
 // Windows-specific AppUserModelID
-electronApp.setAppUserModelId('com.electron.marktext')
+electronApp.setAppUserModelId(WINDOWS_APP_USER_MODEL_ID)
 
 // Dev shortcuts and reload suppression
 app.on('browser-window-created', (_, window) => {
