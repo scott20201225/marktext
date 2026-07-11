@@ -77,6 +77,9 @@ export default defineConfig({
     define: {
       global: 'globalThis'
     },
+    server: {
+      host: '127.0.0.1'
+    },
     resolve: {
       alias: {
         '@': resolve(__dirname, 'src/renderer/src'),
