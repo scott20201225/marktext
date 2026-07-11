@@ -22,6 +22,10 @@ const PARAGRAPH_MENU_IDS = [
   'orderListMenuItem',
   'bulletListMenuItem',
   'taskListMenuItem',
+  'taskStatusMenuItem',
+  'toggleTaskStatusMenuItem',
+  'markTaskCompleteMenuItem',
+  'markTaskIncompleteMenuItem',
   'looseListItemMenuItem',
   'paragraphMenuItem',
   'horizontalLineMenuItem',
@@ -207,5 +211,31 @@ describe('updateSelectionMenus — list kinds', () => {
     updateSelectionMenus(menu as unknown as Menu, { affiliation: { task: true } })
     const loose = menu.paragraphItems.find((i) => i.id === 'looseListItemMenuItem')!
     expect(loose.enabled).toBe(true)
+  })
+
+  it('enables task status submenu for a multiline task selection but keeps toggle disabled', () => {
+    const menu = makeMenu()
+    updateSelectionMenus(menu as unknown as Menu, {
+      affiliation: { task: true },
+      isTaskList: true,
+      isMultiline: true
+    })
+
+    expect(menu.paragraphItems.find((i) => i.id === 'taskStatusMenuItem')!.enabled).toBe(true)
+    expect(menu.paragraphItems.find((i) => i.id === 'markTaskCompleteMenuItem')!.enabled).toBe(true)
+    expect(menu.paragraphItems.find((i) => i.id === 'markTaskIncompleteMenuItem')!.enabled).toBe(true)
+    expect(menu.paragraphItems.find((i) => i.id === 'toggleTaskStatusMenuItem')!.enabled).toBe(false)
+  })
+
+  it('enables toggle task status for a single task selection', () => {
+    const menu = makeMenu()
+    updateSelectionMenus(menu as unknown as Menu, {
+      affiliation: { task: true },
+      isTaskList: true,
+      isMultiline: false
+    })
+
+    expect(menu.paragraphItems.find((i) => i.id === 'taskStatusMenuItem')!.enabled).toBe(true)
+    expect(menu.paragraphItems.find((i) => i.id === 'toggleTaskStatusMenuItem')!.enabled).toBe(true)
   })
 })

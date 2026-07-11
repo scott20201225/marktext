@@ -41,9 +41,8 @@ const TABLE_SEPARATOR_IDS: readonly string[] = [
   'tableDeleteSeparator'
 ]
 
-const TASK_STATUS_MENU_IDS: readonly string[] = [
+const TASK_STATUS_PARENT_AND_SET_IDS: readonly string[] = [
   'taskStatusMenuItem',
-  'toggleTaskStatusMenuItem',
   'markTaskCompleteMenuItem',
   'markTaskIncompleteMenuItem'
 ]
@@ -481,8 +480,9 @@ export const updateSelectionMenus = (
     setMultipleStatus(applicationMenu, ['looseListItemMenuItem'], false)
   }
 
-  const enableTaskStatus = !isCodeFences && !isMultiline && !!state.isTaskList
-  setMultipleStatus(applicationMenu, TASK_STATUS_MENU_IDS, enableTaskStatus)
+  const enableTaskStatus = !isCodeFences && !!state.isTaskList
+  setMultipleStatus(applicationMenu, TASK_STATUS_PARENT_AND_SET_IDS, enableTaskStatus)
+  setMultipleStatus(applicationMenu, ['toggleTaskStatusMenuItem'], enableTaskStatus && !isMultiline)
 
   // Front matter may exist at most once per document; disable the menu item
   // whenever the document already has one.

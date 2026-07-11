@@ -30,6 +30,7 @@ import {
     locateSentinelOffsets,
     resolveSentinelCursor,
 } from './selection/offsetCursor';
+import { compareParagraphsOrder } from './selection/dom';
 import { isAnyListState, isAtxHeadingState, isCodeBlockState } from './state/types';
 import { isAdmonitionType } from './state/admonition';
 import Tooltip from './ui/tooltip';
@@ -81,6 +82,15 @@ interface IListParagraphActionBlock {
 
 interface ITaskCheckboxAttachment {
     update?: (checked: boolean, source?: string) => void;
+}
+
+interface IContentSelectionEndpoints {
+    anchorBlock: Content;
+    focusBlock: Content;
+    anchorOffset: number;
+    focusOffset: number;
+    startBlock: Content;
+    endBlock: Content;
 }
 
 // Maps the paragraph-menu labels the desktop sends through `updateParagraph`
@@ -797,11 +807,92 @@ export class Muya {
         return checkbox;
     }
 
+    private _contentSelectionEndpoints(): IContentSelectionEndpoints | null {
+        const sel = this.editor.selection;
+        const live = sel.getSelection();
+        const liveAnchorBlock = live?.anchor.block;
+        const liveFocusBlock = live?.focus.block;
+        const liveAnchorOffset = live?.anchor.offset;
+        const liveFocusOffset = live?.focus.offset;
+
+        const anchorBlock = liveAnchorBlock ?? sel.anchorBlock;
+        const focusBlock = liveFocusBlock ?? sel.focusBlock;
+        const anchorOffset = liveAnchorOffset ?? sel.anchor?.offset;
+        const focusOffset = liveFocusOffset ?? sel.focus?.offset;
+
+        if (!anchorBlock || !focusBlock || anchorOffset == null || focusOffset == null)
+            return null;
+
+        const anchorBeforeFocus = anchorBlock === focusBlock
+            ? anchorOffset <= focusOffset
+            : compareParagraphsOrder(anchorBlock.domNode!, focusBlock.domNode!);
+
+        return {
+            anchorBlock,
+            focusBlock,
+            anchorOffset,
+            focusOffset,
+            startBlock: anchorBeforeFocus ? anchorBlock : focusBlock,
+            endBlock: anchorBeforeFocus ? focusBlock : anchorBlock,
+        };
+    }
+
+    private _selectedTaskListItems(): Parent[] {
+        const endpoints = this._contentSelectionEndpoints();
+        const fallback = this._taskListItemAtCursor();
+        if (!endpoints)
+            return fallback ? [fallback] : [];
+
+        const seen = new Set<Parent>();
+        const items: Parent[] = [];
+        let node: Content | null = endpoints.startBlock;
+
+        while (node) {
+            const item = node.closestBlock('task-list-item') as Parent | null;
+            if (item && !seen.has(item)) {
+                seen.add(item);
+                items.push(item);
+            }
+
+            if (node === endpoints.endBlock)
+                break;
+
+            node = node.nextContentInContext();
+        }
+
+        if (!items.length && fallback)
+            items.push(fallback);
+
+        return items;
+    }
+
     private _setTaskItemStatus(checked: boolean) {
-        const item = this._taskListItemAtCursor();
-        if (!item)
+        const items = this._selectedTaskListItems();
+        if (!items.length)
             return;
 
+        const selection = this._contentSelectionEndpoints();
+        if (items.length > 1 && selection) {
+            for (const item of items)
+                this._taskCheckboxOf(item)?.update?.(checked, 'user');
+
+            this.editor.activeContentBlock = selection.focusBlock;
+            this.editor.selection.setSelection(
+                {
+                    offset: selection.anchorOffset,
+                    block: selection.anchorBlock,
+                    path: selection.anchorBlock.path,
+                },
+                {
+                    offset: selection.focusOffset,
+                    block: selection.focusBlock,
+                    path: selection.focusBlock.path,
+                },
+            );
+            return;
+        }
+
+        const item = items[0];
         const activeBlock = this.editor.activeContentBlock ?? this.editor.selection.anchorBlock ?? item.firstContentInDescendant();
         const cursor = activeBlock?.getCursor?.();
         const startOffset = cursor ? Math.min(cursor.start.offset, cursor.end.offset) : 0;

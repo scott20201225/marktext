@@ -12,6 +12,7 @@ import {
   getOrderedList,
   getBulletList,
   getTaskList,
+  getTaskStatus,
   getIndentList,
   getOutdentList
 } from './menuItems'
@@ -51,6 +52,7 @@ interface ParagraphContextState {
   canCreateOrderedList: boolean
   canCreateBulletList: boolean
   canCreateTaskList: boolean
+  canSetTaskStatus: boolean
   inOrderedList: boolean
   inBulletList: boolean
 }
@@ -72,6 +74,7 @@ const getParagraphContextState = (): ParagraphContextState => {
       canCreateOrderedList: false,
       canCreateBulletList: false,
       canCreateTaskList: false,
+      canSetTaskStatus: false,
       inOrderedList: false,
       inBulletList: false
     }
@@ -80,11 +83,13 @@ const getParagraphContextState = (): ParagraphContextState => {
   const orderedListMenuItem = appMenu.getMenuItemById('orderListMenuItem')
   const bulletListMenuItem = appMenu.getMenuItemById('bulletListMenuItem')
   const taskListMenuItem = appMenu.getMenuItemById('taskListMenuItem')
+  const taskStatusMenuItem = appMenu.getMenuItemById('taskStatusMenuItem')
 
   return {
     canCreateOrderedList: !!orderedListMenuItem?.enabled,
     canCreateBulletList: !!bulletListMenuItem?.enabled,
     canCreateTaskList: !!taskListMenuItem?.enabled,
+    canSetTaskStatus: !!taskStatusMenuItem?.enabled,
     inOrderedList: !!orderedListMenuItem?.checked,
     inBulletList: !!bulletListMenuItem?.checked
   }
@@ -97,10 +102,13 @@ const getContextItems = (selectionText: string): MenuItemConstructorOptions[] =>
     canCreateOrderedList,
     canCreateBulletList,
     canCreateTaskList,
+    canSetTaskStatus,
     inOrderedList,
     inBulletList
   } = getParagraphContextState()
   const shouldShowParagraphListActions = hasSelectedText(selectionText)
+  const shouldShowTaskStatusActions =
+    canSetTaskStatus && hasSelectedText(selectionText) && hasLineBreak(selectionText)
   const shouldShowListIndentation =
     (inOrderedList || inBulletList) &&
     (!hasSelectedText(selectionText) || !hasLineBreak(selectionText))
@@ -114,6 +122,10 @@ const getContextItems = (selectionText: string): MenuItemConstructorOptions[] =>
     if (paragraphItems.length > 0) {
       items.push(SEPARATOR, ...paragraphItems)
     }
+  }
+
+  if (shouldShowTaskStatusActions) {
+    items.push(SEPARATOR, getTaskStatus())
   }
 
   if (shouldShowListIndentation) {

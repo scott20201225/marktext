@@ -111,6 +111,35 @@ export const getTaskList = (): MenuItemConstructorOptions => ({
   }
 })
 
+export const getTaskStatus = (): MenuItemConstructorOptions => ({
+  label: t('menu.paragraph.taskStatus'),
+  id: 'contextTaskStatusMenuItem',
+  submenu: [
+    {
+      label: t('menu.paragraph.markAsComplete'),
+      id: 'contextMarkTaskCompleteMenuItem',
+      click(_menuItem, targetWindow) {
+        if (targetWindow) {
+          ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+            type: 'task-status-complete'
+          })
+        }
+      }
+    },
+    {
+      label: t('menu.paragraph.markAsIncomplete'),
+      id: 'contextMarkTaskIncompleteMenuItem',
+      click(_menuItem, targetWindow) {
+        if (targetWindow) {
+          ;(targetWindow as BrowserWindow).webContents.send('mt::editor-paragraph-action', {
+            type: 'task-status-incomplete'
+          })
+        }
+      }
+    }
+  ]
+})
+
 export const getIndentList = (): MenuItemConstructorOptions => ({
   label: t('menu.paragraph.indent'),
   id: 'contextIndentListMenuItem',
@@ -149,6 +178,7 @@ export const INSERT_AFTER = getInsertAfter()
 export const ORDERED_LIST = getOrderedList()
 export const BULLET_LIST = getBulletList()
 export const TASK_LIST = getTaskList()
+export const TASK_STATUS = getTaskStatus()
 export const INDENT_LIST = getIndentList()
 export const OUTDENT_LIST = getOutdentList()
 
