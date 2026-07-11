@@ -15,6 +15,11 @@
 
 <br>
 
+> [!IMPORTANT]
+> `scott/marktext` is now kept as a legacy compatibility branch in this repository.
+> All Scott custom features, new releases, screenshots, and ongoing development have moved to [MarkTextPro](https://github.com/scott20201225/marktext-pro).
+> Please use the MarkTextPro project for the latest builds and follow-up work.
+
 <div align="center">
   <!-- License -->
   <a href="LICENSE">
@@ -36,6 +41,10 @@
 
 <div align="center">
   <h3>
+    <a href="https://github.com/scott20201225/marktext-pro">
+      MarkTextPro
+    </a>
+    <span> | </span>
     <a href="https://github.com/marktext/marktext">
       Website
     </a>
@@ -128,6 +137,8 @@ MarkText is an open-source Markdown editor powered by the support of its communi
 
 ## Download and Installation
 
+> Looking for the Scott custom build line? Download the latest installers from [MarkTextPro Releases](https://github.com/scott20201225/marktext-pro/releases/latest).
+
 ![platform](https://img.shields.io/static/v1.svg?label=Platform&message=Linux%20x64%20|%20macOS%20x64%2Farm64%20|%20Windows%20x64%2Farm64&style=for-the-badge)
 
 | ![](https://raw.githubusercontent.com/wiki/ryanoasis/nerd-fonts/screenshots/v1.0.x/mac-pass-sm.png)                                                                                         | ![](https://raw.githubusercontent.com/wiki/ryanoasis/nerd-fonts/screenshots/v1.0.x/windows-pass-sm.png)                                                                                         | ![](https://raw.githubusercontent.com/wiki/ryanoasis/nerd-fonts/screenshots/v1.0.x/linux-pass-sm.png)                                                                                                       |
@@ -184,6 +195,8 @@ If you have any questions regarding MarkText, you are welcome to write an issue.
 ## Contribution
 
 MarkText is in development, please make sure to read the [Contributing Guide](.github/CONTRIBUTING.md) before making a pull request. Want to add some features to MarkText? Refer to our [roadmap](https://github.com/marktext/marktext/projects) and open issues.
+
+For Scott custom features and ongoing fork work, please use the [MarkTextPro repository](https://github.com/scott20201225/marktext-pro).
 
 ## Contributors
 
